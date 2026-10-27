@@ -5,8 +5,12 @@
   python3 tools/build.py --check
   python3 tools/build.py --single OUT
   python3 tools/build.py --apworld OUT     packs apworld/archelemental into an .apworld
+
+A normal build also packs downloads/archelemental.apworld and copies the example YAML next to it,
+so the game's Download buttons always hand out the version that matches it.
 """
 import hashlib
+import json
 import os
 import re
 import zipfile
@@ -84,13 +88,23 @@ def apworld(out):
     apdata.main()
     src = os.path.join(ROOT, 'apworld', 'archelemental')
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
-        for folder, dirs, files in os.walk(src):
-            dirs[:] = [d for d in dirs if d != '__pycache__']
+        for folder, dirs, files in sorted(os.walk(src)):
+            dirs[:] = sorted(d for d in dirs if d != '__pycache__')
             for f in sorted(files):
                 if f.endswith('.pyc'):
                     continue
                 path = os.path.join(folder, f)
-                z.write(path, os.path.join('archelemental', os.path.relpath(path, src)))
+                with open(path, 'rb') as fh:
+                    data = fh.read()
+                # a packed APWorld's manifest also says which packaging it uses, as Archipelago's own packer does
+                if f == 'archipelago.json' and folder == src:
+                    manifest = json.loads(data)
+                    manifest.update(version=7, compatible_version=7)
+                    data = (json.dumps(manifest, indent=4) + '\n').encode('utf-8')
+                # a fixed date, so the file only changes when what's in it does
+                info = zipfile.ZipInfo(os.path.join('archelemental', os.path.relpath(path, src)), (2026, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                z.writestr(info, data)
     print('wrote', out)
 
 def main(argv):
@@ -113,6 +127,9 @@ def main(argv):
         return 2
     write(os.path.join(ROOT, BUNDLE), bundle)
     write(os.path.join(ROOT, 'index.html'), stamped_index(bundle))
+    os.makedirs(os.path.join(ROOT, 'downloads'), exist_ok=True)
+    apworld(os.path.join(ROOT, 'downloads', 'archelemental.apworld'))
+    write(os.path.join(ROOT, 'downloads', 'Archelemental.yaml'), read('examples/Archelemental.yaml'))
     print('game.js %d KB, %d files | index.html tags updated' % (len(bundle.encode('utf-8')) // 1024, len(JS_FILES)))
     return 0
 

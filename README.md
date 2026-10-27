@@ -9,8 +9,8 @@ the first time is a check, and Progressive Luck from the multiworld tilts your r
 
 ## Playing
 
-1. Install `archelemental.apworld` (from the releases) by double-clicking it, or put it in your Archipelago
-   `custom_worlds` folder.
+1. Download `archelemental.apworld` from the game's Archipelago page (it always matches the live game), then
+   double-click it or put it in your Archipelago `custom_worlds` folder.
 2. Make your options file: in the Archipelago Launcher choose "Generate Template Options", or start from
    [`examples/Archelemental.yaml`](examples/Archelemental.yaml).
 3. Once the multiworld is generated and hosted, open the game, go to **Archipelago** and connect with the server
@@ -57,7 +57,8 @@ APWorld works out how many rolls it would take at each amount of luck, and expec
 
 ## Building
 
-- `python3 tools/build.py` joins `js/*.js` into `game.js` (the page loads that).
+- `python3 tools/build.py` joins `js/*.js` into `game.js` (the page loads that), and packs
+  `downloads/archelemental.apworld` and the example YAML for the game's Download buttons.
 - `python3 tools/build.py --apworld archelemental.apworld` packs the APWorld. It refreshes `data.json` from the
   game's code first, so the two always match.
 

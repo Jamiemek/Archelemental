@@ -1,0 +1,28 @@
+# An example options file for Archelemental. Change the name, then put it in your Archipelago Players folder.
+name: YourName
+game: Archelemental
+Archelemental:
+  # how many of the 118 elements you need to finish
+  elements_required: 118
+  # how many of the 16 joke elements you also need (more than 0 turns joke elements on)
+  jokes_required: 0
+  # joke elements as checks, and the Joke Table item that lets you roll them
+  joke_elements: true
+  # one of each catalyst from your own shop is a check, up to this tier: none, common, uncommon, rare, epic, legendary, mythic
+  catalyst_checks: epic
+  # each of the 100 compound achievements is a check (a lot of checks)
+  achievement_checks: false
+  # parts of the game to keep
+  bonds_tree: true
+  shop: true
+  events: true
+  # how often the shop restocks, in minutes
+  restock_minutes: 10
+  # Progressive Luck: how many there are, and how much luck each gives (in percent)
+  luck_items: 15
+  luck_per_item: 100
+  # how many rolls the logic will have you spend hunting one thing
+  roll_budget: 5000
+  # the filler mix
+  filler_catalysts: 70
+  filler_quarks: 30

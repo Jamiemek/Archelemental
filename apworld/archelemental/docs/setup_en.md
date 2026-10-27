@@ -3,7 +3,7 @@
 ## What you need
 
 - A web browser. The game runs at https://jamiemek.github.io/Archelemental/
-- `archelemental.apworld`, from the releases on https://github.com/Jamiemek/Archelemental
+- `archelemental.apworld`, from the Archipelago page in the game
 
 ## Installing the APWorld
 
