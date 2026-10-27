@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archelemental</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<script>
+// each Archipelago seed and slot keeps its own save on this device; settings like the theme and sound are shared
+(function () {
+    var real = window.localStorage;
+    var shared = /^(archel|elemental(Theme|LowDetail|AutoLow|UiSounds|SoundTiers|RarityEffects|Display|CutsOff|Chain|Calm|BonusOpen|AudioEnabled|JokeMix|JokeHide)$)/;
+    var save = '';
+    try {
+        save = real.getItem('archelSave') || '';
+    } catch (e) { }
+    var P = 'save:' + save + ':';
+    var to = function (k) { return shared.test(k) ? k : P + k; };
+    function keys() {
+        var out = [];
+        for (var i = 0; i < real.length; i++) {
+            var k = real.key(i);
+            if (k && k.indexOf(P) === 0) {
+                out.push(k.slice(P.length));
+            } else if (k && shared.test(k)) {
+                out.push(k);
+            }
+        }
+        return out;
+    }
+    var api = {
+        getItem: function (k) { return real.getItem(to(k)); },
+        setItem: function (k, v) { real.setItem(to(k), String(v)); },
+        removeItem: function (k) { real.removeItem(to(k)); },
+        clear: function () { keys().forEach(function (k) { if (!shared.test(k)) { real.removeItem(P + k); } }); },
+        key: function (i) { var l = keys(); return i < l.length ? l[i] : null; }
+    };
+    var store = new Proxy(api, {
+        get: function (t, k) {
+            if (k === 'length') {
+                return keys().length;
+            }
+            if (k in api) {
+                return api[k];
+            }
+            var v = typeof k === 'string' ? real.getItem(to(k)) : null;
+            return v === null ? undefined : v;
+        },
+        ownKeys: function () { return keys(); },
+        getOwnPropertyDescriptor: function (t, k) {
+            var v = typeof k === 'string' ? real.getItem(to(k)) : null;
+            return v === null ? undefined : { enumerable: true, configurable: true, value: v };
+        }
+    });
+    Object.defineProperty(window, 'localStorage', { configurable: true, get: function () { return store; } });
+})();
+</script>
+<script>
+(function () {
+    var t = 'light';
+    try {
+        t = localStorage.getItem('elementalTheme') || 'light';
+    } catch (e) { }
+    if (t === 'system') {
+        t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+    // the page skin (a cosmetic), set early so the page doesn't flash; the game checks it's owned
+    try {
+        var p = JSON.parse(localStorage.getItem('elementalCosmetics') || '{}').page;
+        if (p) {
+            document.documentElement.setAttribute('data-skin', p);
+        }
+    } catch (e) { }
+})();
+</script>
+<link rel="stylesheet" href="css/style.css?v=e35b03d4d6">
+</head>
+<body>
+<div class="topband"><div class="topband-in">
+<div class="top-left"><button class="brand" data-go="menu" aria-label="Archelemental home"><span class="mark">El</span><span class="wordmark">Archelemental</span></button><div class="quark-chip" title="Quarks" aria-label="Quarks"><span class="q-sym" aria-hidden="true">q</span><span id="quarkCount">0</span></div><span class="final-badge" id="finalBadge" title="Final Element" hidden>Final Element</span></div>
+<button class="link-btn" data-go="achievements">Achievements <span id="achievementHeaderCount">0/100</span></button>
+</div></div>
+<div class="app">
+
+<main id="menu" class="screen active">
+<div class="home">
+<section class="home-map">
+<div class="periodic-wrap"><div class="periodic compact" id="homeMap"></div></div>
+<p class="map-caption"><strong id="mapCount">0 of 118 elements found.</strong>Select a found element to see its bonus.</p>
+</section>
+<aside class="home-side">
+<button class="primary roll-cta" data-go="game">Roll</button>
+<nav class="navlist" aria-label="Sections">
+<button class="nav-row" data-go="inventory"><span>Collection</span></button>
+<button class="nav-row" data-go="bonds"><span>Bonds</span><span class="val" id="homeBonds">0 / 30</span></button>
+<button class="nav-row" data-go="shop"><span>Shop</span><span class="val" id="homeShop"></span></button>
+<button class="nav-row" data-go="achievements"><span>Achievements</span><span class="val" id="homeAch">0 / 0</span></button>
+<button class="nav-row" data-go="ap"><span>Archipelago</span><span class="val" id="apNavVal">Not connected</span></button>
+<button class="nav-row" data-go="settings"><span>Settings</span><span class="val">Sound, effects, save</span></button>
+</nav>
+<h2 class="side-h" id="homeRarestH">Rarest find</h2>
+<div id="homeRarest"></div>
+<dl class="stats" style="margin-top:18px">
+<div><dt>Rolls logged</dt><dd id="homeRolls">0</dd></div>
+<div><dt>Chain chance</dt><dd id="homeChain">1 in 8</dd></div>
+<div><dt>Autoroll</dt><dd class="js-auto">Locked</dd></div>
+</dl>
+<p class="home-links"><a href="https://discord.gg/JRjxek33se" target="_blank" rel="noopener">Discord</a></p>
+</aside>
+</div>
+</main>
+
+<main id="game" class="screen">
+<div class="page-head"><div><h1>Roll</h1><p class="sub">One element per roll, with a chance to chain into more.</p></div><button class="ghost" data-go="menu">Back</button></div>
+<div class="roll-layout">
+<section class="roll-panel">
+<nav class="roll-nav" aria-label="Pages">
+<button class="ghost" data-go="inventory" title="Collection" aria-label="Collection"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span class="rn-label">Collection</span></button>
+<button class="ghost" data-go="shop" title="Shop" aria-label="Shop"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg><span class="rn-label">Shop</span></button>
+<button class="ghost" data-go="catinv" title="Inventory" aria-label="Inventory"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/></svg><span class="rn-label">Inventory</span></button>
+<button class="ghost roll-bonds" data-go="bonds" id="rollBondsBtn" title="Bonds" aria-label="Bonds"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7.5l3 8M16 7.5l-3 8M8.5 6h7"/></svg><span class="rn-label">Bonds</span></button>
+</nav>
+<div class="roll-results" id="rollResults"><div class="roll-result-column"><div class="reel" id="reel"><div class="reel-symbol" id="reelSymbol">?</div></div><div class="result-card"><h2 class="result-name" id="resultName">No roll yet</h2><div class="rarity" id="resultRarity">Press Roll to start</div><div id="resultExtra" class="sub"></div></div></div></div>
+<div class="roll-controls"><button class="primary" id="rollBtn">Roll</button><button class="ghost" id="autoRollBtn" aria-pressed="false" disabled>Autoroll locked</button></div>
+<div class="qstorm-bar" id="qStormBar" aria-live="polite" hidden></div>
+<div id="autoHint"></div>
+<div class="toast" id="rollToast" aria-live="polite" style="display:none"></div>
+</section>
+<aside class="roll-side">
+<div id="rollCats" class="roll-cats"></div>
+<details class="fold" id="bonusFold"><summary class="side-h">Current bonuses</summary><dl class="stats" id="rollStats"></dl></details>
+<h2 class="side-h">Last 1,000 rolls</h2>
+<div class="history" id="rollHistory"></div>
+<h2 class="side-h">How a roll works</h2>
+<p>Each element has its own odds. Rarer elements come up less often, and luck bonuses nudge the weighting toward them.</p>
+<p>After every element there is a 1 in 8 chance of adding another, up to 30. Four rare elements and four deep bond lines each improve that, up to 1 in 5.</p>
+<p>A chain is written as one formula in Hill order: carbon first, then hydrogen, then the rest alphabetically.</p>
+</aside>
+</div>
+</main>
+
+<main id="inventory" class="screen">
+<div class="page-head"><div><h1>Collection</h1><p class="sub">Every formula you have rolled, and the elements behind them.</p></div><button class="ghost" data-go="menu">Back</button></div>
+<section class="inventory-panel">
+<div class="tabs"><button class="tab active" data-tab="compounds">Top ten</button><button class="tab" data-tab="completionist">All elements</button></div>
+<div id="compoundView"><div class="rank-tabs"><button class="ghost rank-tab active" data-rank="odds">Top 10 by odds</button><button class="ghost rank-tab" data-rank="score">Top 10 by score</button></div><div class="toolbar"><span class="stat" id="collectionStats">0 rolls logged</span></div><div id="compoundGrid" class="rank-list"></div></div>
+<div id="completionView" style="display:none">
+<div class="toolbar"><strong id="elementStats">0 / 118 elements found</strong></div>
+<div class="periodic-wrap"><div class="periodic full" id="periodic"></div></div>
+<div class="legend" id="legend"></div>
+<div id="jokeWrap" hidden><div class="toolbar"><strong id="jokeStats"></strong></div><div class="periodic-wrap"><div class="periodic full joke-table" id="jokeTable"></div></div></div>
+<p class="footnote">Select any found element to open its page. Its bonus applies permanently from the first time you find it.</p>
+<div id="buffSummary"></div>
+</div>
+</section>
+</main>
+
+<main id="element" class="screen">
+<div class="page-head"><div><h1 id="elemTitle">Element</h1><p class="sub" id="elemSub"></p></div><button class="ghost" id="elemBack">Back</button></div>
+<section class="inventory-panel">
+<div class="element-buff-panel" id="elementBuffPanel"><div class="buff-panel-kicker">Bonus</div><h3 id="buffElementName">Select an element</h3><p id="buffElementDesc">Choose an element on the table to see its bonus.</p><div id="buffElementState" class="buff-state">Bonuses apply after the element is found.</div></div>
+<div id="elemCompounds"></div>
+</section>
+</main>
+
+<main id="settings" class="screen">
+<div class="page-head"><div><h1>Settings</h1><p class="sub">Display, sound and saved progress.</p></div><div class="head-right"><span class="ver" id="appVersion"></span><button class="ghost" data-go="menu">Back</button></div></div>
+<section class="inventory-panel">
+<details class="set-group" data-group="display"><summary>Display</summary>
+<div class="setting"><h3>Theme</h3><div class="body"><p>Light or dark colours for the whole game.</p><select id="themeSetting"><option value="light" selected>Light</option><option value="dark">Dark</option><option value="system">Match my device</option></select></div></div>
+<div class="setting"><h3>Chain details</h3><div class="body"><p>Show how many elements were chained under each result.</p><select id="chainSetting"><option value="on" selected>Show chain details</option><option value="off">Result only</option></select></div></div>
+<div class="setting"><h3>Rarity display</h3><div class="body"><p>Show each roll's rarity as its odds, or as its score. Score adds up the base odds of every element in the roll, and longer chains of rare elements score extra.</p><select id="displaySetting"><option value="odds">Odds</option><option value="score" selected>Score</option></select></div></div>
+</details>
+<details class="set-group" data-group="graphics"><summary>Graphics and effects</summary>
+<div class="setting"><h3>Flashing</h3><div class="body"><p>Tone down bright flashes, flickers and colour inversions in rare-roll effects and cutscenes. Turn this on if flashing lights bother you.</p><label class="check"><input type="checkbox" id="calmSetting">Reduce flashing</label></div></div>
+<div class="setting"><h3>Detail</h3><div class="body"><p>Draw the scanner, effects and cutscenes at a lower resolution, with fewer particles. It switches on by itself if they stutter on your device.</p><label class="check"><input type="checkbox" id="lowSetting">Lower detail</label></div></div>
+<div class="setting"><h3>Cutscenes and effects</h3><div class="body"><p>Watch again any cutscene or rarity effect you've seen. More appear here as you find them. <span id="vwCount"></span></p>
+<label class="check"><input type="checkbox" id="cutsSetting">Play cutscenes when I find their elements</label>
+<h4 class="vw-h">Cutscenes</h4><div class="vw-grid" id="vwCuts"></div>
+<div id="vwJokeWrap" hidden><h4 class="vw-h">Joke cutscenes</h4><div class="vw-grid" id="vwJokes"></div></div>
+<h4 class="vw-h">Rarity effects</h4><div class="vw-grid" id="vwFx"></div>
+<div id="vwDarkWrap" hidden><h4 class="vw-h">Secret effects</h4><div class="vw-grid" id="vwDark"></div></div></div></div>
+</details>
+<details class="set-group" data-group="sound"><summary>Sound</summary>
+<div class="setting"><h3>Sound</h3><div class="body"><p>A soft tick while the reel spins and a chime on the result. Rarer results get a fuller chime. Sound starts after you press Roll.</p>
+<label class="check"><input type="checkbox" id="audioEnabled" checked>Play roll sounds</label>
+<label class="check"><input type="checkbox" id="uiSoundSet" checked>Little sounds for buttons and bonds</label>
+<p>Choose which rarity tiers get a sound and a full-screen effect. Tiers are set by the roll's score.</p>
+<table class="tier-table"><thead><tr><th>Rarity</th><th>Sound</th><th>Effect</th></tr></thead><tbody>
+<tr>
+<td><b>Tier 1</b>Score 10,000 to 30,000</td>
+<td><input type="checkbox" data-sound-tier="1" checked aria-label="Tier 1 sound"></td>
+<td><input type="checkbox" data-effect-tier="1" checked aria-label="Tier 1 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 2</b>Score 30,000 to 100,000</td>
+<td><input type="checkbox" data-sound-tier="2" checked aria-label="Tier 2 sound"></td>
+<td><input type="checkbox" data-effect-tier="2" checked aria-label="Tier 2 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 3</b>Score 100,000 to 250,000</td>
+<td><input type="checkbox" data-sound-tier="3" checked aria-label="Tier 3 sound"></td>
+<td><input type="checkbox" data-effect-tier="3" checked aria-label="Tier 3 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 4</b>Score 250,000 to 500,000</td>
+<td><input type="checkbox" data-sound-tier="4" checked aria-label="Tier 4 sound"></td>
+<td><input type="checkbox" data-effect-tier="4" checked aria-label="Tier 4 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 5</b>Score 500,000 to 1,000,000</td>
+<td><input type="checkbox" data-sound-tier="5" checked aria-label="Tier 5 sound"></td>
+<td><input type="checkbox" data-effect-tier="5" checked aria-label="Tier 5 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 6</b>Score 1,000,000 to 1,500,000</td>
+<td><input type="checkbox" data-sound-tier="6" checked aria-label="Tier 6 sound"></td>
+<td><input type="checkbox" data-effect-tier="6" checked aria-label="Tier 6 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 7</b>Score 1,500,000 to 3,000,000</td>
+<td><input type="checkbox" data-sound-tier="7" checked aria-label="Tier 7 sound"></td>
+<td><input type="checkbox" data-effect-tier="7" checked aria-label="Tier 7 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 8</b>Score 3,000,000 to 12,000,000</td>
+<td><input type="checkbox" data-sound-tier="8" checked aria-label="Tier 8 sound"></td>
+<td><input type="checkbox" data-effect-tier="8" checked aria-label="Tier 8 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 9</b>Score 12,000,000 <span id="tier9Top">to 30,000,000</span></td>
+<td><input type="checkbox" data-sound-tier="9" checked aria-label="Tier 9 sound"></td>
+<td><input type="checkbox" data-effect-tier="9" checked aria-label="Tier 9 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 10</b>Score 30,000,000 to 100,000,000</td>
+<td><input type="checkbox" data-sound-tier="10" checked aria-label="Tier 10 sound"></td>
+<td><input type="checkbox" data-effect-tier="10" checked aria-label="Tier 10 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 11</b>Score 100,000,000 to 300,000,000</td>
+<td><input type="checkbox" data-sound-tier="11" checked aria-label="Tier 11 sound"></td>
+<td><input type="checkbox" data-effect-tier="11" checked aria-label="Tier 11 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 12</b>Score 300,000,000 to 1,000,000,000</td>
+<td><input type="checkbox" data-sound-tier="12" checked aria-label="Tier 12 sound"></td>
+<td><input type="checkbox" data-effect-tier="12" checked aria-label="Tier 12 effect"></td>
+</tr>
+<tr>
+<td><b>Tier 13</b>Score 1,000,000,000 and above</td>
+<td><input type="checkbox" data-sound-tier="13" checked aria-label="Tier 13 sound"></td>
+<td><input type="checkbox" data-effect-tier="13" checked aria-label="Tier 13 effect"></td>
+</tr>
+</tbody></table></div></div>
+</details>
+<details class="set-group" data-group="gameplay"><summary>Gameplay</summary>
+<div class="setting"><h3>Active catalysts</h3><div class="body"><p><b>Cancelling a catalyst stops it immediately and it is gone for good.</b> There is no refund and this cannot be undone. You can also cancel them from the inventory.</p><div id="catClear"></div></div></div>
+<div class="setting" id="jokeSetting" hidden><h3>Joke periodic table</h3><div class="body"><p>Joke elements roll alongside the real ones. With mixing on they can chain with real elements into joke compounds. With it off, a chain is all joke or all real: a joke element that turns up in a chain takes the roll on its own. Your chances of finding them are the same either way.</p>
+<label class="check"><input type="checkbox" id="jokeMixSet">Mix joke elements into chains</label>
+<label class="check"><input type="checkbox" id="jokeHideSet">Hide joke finds on the global top 10</label></div></div>
+</details>
+<details class="set-group" data-group="save"><summary>Save and storage</summary>
+<div class="setting"><h3>Storage</h3><div class="body"><p id="storeUse"></p><div class="store-bar"><span id="storeBar"></span></div>
+<p>If your save gets full, clear old finds you no longer need. Every find scoring below the minimum you choose is removed, except single elements, achievement formulas, your top 10s, and anything your bonds still need. Your roll total, elements found and achievements don't change.</p>
+<div class="adm-find"><input id="clearMin" class="adm-input" type="number" min="1" inputmode="numeric" placeholder="Minimum score to keep" aria-label="Minimum score to keep"><button class="ghost" id="clearBtn">Clear redundant finds</button></div>
+<p class="adm-msg" id="clearMsg"></p>
+<label class="check"><input type="checkbox" id="autoClearSetting">Clear automatically every 20 minutes, below 3/4 of the score of your 10th best find</label>
+<div class="btn-row" id="clearConfirm" hidden><button class="ghost danger" id="clearYes">Remove finds</button><button class="ghost" id="clearNo">Cancel</button></div></div></div>
+<div class="setting"><h3>Start over</h3><div class="body"><p>Delete your collection, found elements and achievements. This cannot be undone.</p><button class="ghost" id="resetBtn">Reset all progress</button></div></div>
+</details>
+<details class="set-group" data-group="about"><summary>About</summary>
+<div class="setting"><h3>Community</h3><div class="body"><p>Join the Elemental Discord to talk about the game, share your finds and suggest ideas.</p><div class="btn-row"><a class="ghost link-btn" href="https://discord.gg/JRjxek33se" target="_blank" rel="noopener">Join the Discord</a></div></div></div>
+<div class="setting"><h3>Use of AI</h3><div class="body"><p>AI was used to assist in the creation of this game, particularly in debugging processes, balancing, optimisation and code condensing. If you have questions about how it was used more specifically please DM me on discord. I wish to be as transparent as possible about this</p></div></div>
+<p class="footnote">Odds and score are always worked out from base odds, before any luck, chain or other bonuses. Odds multiply each element's base odds, with ×8 for each chained element. Score adds the base odds together.</p>
+</details>
+</section>
+</main>
+
+<main id="bonds" class="screen">
+<div class="bonds-bar"><button class="ghost" data-go="menu">Main menu</button><button class="ghost" data-go="game">Roll</button><div class="bonds-title">BONDS</div><span class="bonds-hint">Drag to move · scroll or pinch to zoom · tap a glowing slot to fill it</span></div>
+<div class="net-wrap">
+<canvas id="netCanvas" class="net-canvas" aria-label="Bond network"></canvas>
+<div id="netFx" class="net-fx" aria-hidden="true"></div>
+<div class="net-tools"><button class="ghost" id="netCentre">Centre</button><button class="ghost" id="netTotalsBtn">Network buffs</button></div>
+<div class="net-totals" id="netTotalsWrap"><dl class="stats" id="netTotals"></dl></div>
+<button class="primary net-jump" id="netJump" hidden>Jump to slot</button>
+</div>
+</main>
+
+<main id="shop" class="screen">
+<div class="page-head"><div><h1>Shop</h1><p class="sub">Restocks in <b id="shopTimer">0:00</b>. Buy with quarks, use whenever you like.</p></div><div class="head-btns"><button class="ghost" id="shopBuyAll">Buy all</button><button class="ghost" id="shopCourier" hidden>Use Courier</button><button class="ghost" data-go="catinv">Inventory</button><button class="ghost" data-go="menu">Back</button></div></div>
+<div class="tabs shop-tabs" id="shopTabs" hidden><button class="tab active" data-stab="cats">Catalysts</button><button class="tab" data-stab="cos">Cosmetics</button></div>
+<section class="inventory-panel" id="shopCats">
+<div class="toolbar"><strong>In stock</strong><span class="stat" id="shopSlotsNote"></span></div>
+<div class="cat-grid" id="shopStock"></div>
+<p class="shop-msg ok" id="shopMsg" aria-live="polite"></p>
+<p class="footnote">Bought catalysts go to your inventory. One catalyst of each rarity can be active at a time, and two that boost the same thing (luck, quarks, speed and so on) can't run together. Using more of the one that is running adds to it.</p>
+</section>
+<section class="inventory-panel" id="cosPanel" hidden>
+<div class="toolbar"><strong>Cosmetics</strong><span class="stat">Bought once, yours to keep. Switch them on and off any time.</span></div>
+<div class="cat-grid cos-grid" id="cosGrid"></div>
+<p class="shop-msg ok" id="cosMsg" aria-live="polite"></p>
+</section>
+</main>
+
+<main id="catinv" class="screen">
+<div class="page-head"><div><h1>Inventory</h1><p class="sub">Your catalysts. Select one to see what it does and use it.</p></div><div class="head-btns"><button class="ghost" data-go="shop">Shop</button><button class="ghost" data-go="game">Roll</button><button class="ghost" data-go="menu">Back</button></div></div>
+<div class="inv-layout">
+<aside class="inv-detail" id="invDetail"></aside>
+<section class="inv-right">
+<div id="catActive" class="inv-active"></div>
+<div class="inv-sect"><span>Catalysts</span></div>
+<div class="inv-grid" id="catInv"></div>
+</section>
+</div>
+</main>
+
+
+<main id="ap" class="screen">
+<div class="page-head"><div><h1>Archipelago</h1><p class="sub">Connect to a multiworld. Each seed and slot keeps its own save on this device.</p></div><button class="ghost" data-go="menu">Back</button></div>
+<section class="inventory-panel ap-page">
+<div class="setting"><h3>Connection</h3><div class="body">
+<label class="adm-label" for="apHost">Server</label>
+<input id="apHost" class="adm-input" placeholder="archipelago.gg:38281" autocomplete="off" autocapitalize="off" spellcheck="false">
+<label class="adm-label" for="apName">Slot name</label>
+<input id="apName" class="adm-input" placeholder="The name in your YAML" autocomplete="off" autocapitalize="off" spellcheck="false">
+<label class="adm-label" for="apPass">Password</label>
+<input id="apPass" class="adm-input" type="password" placeholder="Leave empty if there isn't one" autocomplete="off">
+<div class="btn-row"><button class="primary" id="apGo">Connect</button></div>
+<p class="ap-status" id="apStatus" data-s="offline">Not connected</p></div></div>
+<div class="setting"><h3>Progress</h3><div class="body"><dl class="stats" id="apGoal"></dl></div></div>
+<div class="setting"><h3>Messages</h3><div class="body">
+<div class="ap-log" id="apLog"></div>
+<form class="ap-chat" id="apChat"><input id="apSay" class="adm-input" placeholder="Chat, or a command like !hint" autocomplete="off"><button class="ghost" type="submit">Send</button><button class="ghost" type="button" id="apHint">Hints</button></form>
+</div></div>
+</section>
+</main>
+<main id="achievements" class="screen">
+<div class="page-head"><div><h1>Achievements</h1><p class="sub">Formulas to find.</p></div><button class="ghost" data-go="menu">Back</button></div>
+<section class="inventory-panel">
+<div class="ach-summary"><strong id="achievementProgress">0 of 0 found</strong><div class="achievement-track"><span id="achievementBar"></span></div></div>
+<div class="toolbar"><input class="search" id="achievementSearch" placeholder="Search by formula or name" aria-label="Search achievements"><select id="achievementFilter" aria-label="Filter achievements"><option value="all">All</option><option value="unlocked">Found</option><option value="locked">Not found</option></select></div>
+<div id="achievementGrid" class="ach-list"></div>
+</section>
+</main>
+
+
+
+</div>
+<div id="rarityEffect" class="rarity-effect" aria-hidden="true"></div>
+<div id="apToast" class="ap-toast" role="status" aria-live="polite"></div>
+<div id="achievementToast" class="achievement-toast" role="status" aria-live="polite"><small id="achievementToastKicker">Achievement unlocked</small><strong id="achievementToastName">Water</strong><span id="achievementToastDesc"></span></div>
+<script src="game.js?v=3a50c049da"></script>
+</body></html>

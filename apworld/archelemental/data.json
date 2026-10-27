@@ -1,0 +1,1519 @@
+{
+ "elements": [
+  {
+   "sym": "H",
+   "name": "Hydrogen",
+   "odds": 6,
+   "z": 1
+  },
+  {
+   "sym": "He",
+   "name": "Helium",
+   "odds": 42,
+   "z": 2
+  },
+  {
+   "sym": "Li",
+   "name": "Lithium",
+   "odds": 129,
+   "z": 3
+  },
+  {
+   "sym": "Be",
+   "name": "Beryllium",
+   "odds": 323,
+   "z": 4
+  },
+  {
+   "sym": "B",
+   "name": "Boron",
+   "odds": 402,
+   "z": 5
+  },
+  {
+   "sym": "C",
+   "name": "Carbon",
+   "odds": 23,
+   "z": 6
+  },
+  {
+   "sym": "N",
+   "name": "Nitrogen",
+   "odds": 42,
+   "z": 7
+  },
+  {
+   "sym": "O",
+   "name": "Oxygen",
+   "odds": 3,
+   "z": 8
+  },
+  {
+   "sym": "F",
+   "name": "Fluorine",
+   "odds": 251,
+   "z": 9
+  },
+  {
+   "sym": "Ne",
+   "name": "Neon",
+   "odds": 1796,
+   "z": 10
+  },
+  {
+   "sym": "Na",
+   "name": "Sodium",
+   "odds": 10823,
+   "z": 11
+  },
+  {
+   "sym": "Mg",
+   "name": "Magnesium",
+   "odds": 323,
+   "z": 12
+  },
+  {
+   "sym": "Al",
+   "name": "Aluminium",
+   "odds": 186,
+   "z": 13
+  },
+  {
+   "sym": "Si",
+   "name": "Silicon",
+   "odds": 5578,
+   "z": 14
+  },
+  {
+   "sym": "P",
+   "name": "Phosphorus",
+   "odds": 186,
+   "z": 15
+  },
+  {
+   "sym": "S",
+   "name": "Sulfur",
+   "odds": 81,
+   "z": 16
+  },
+  {
+   "sym": "Cl",
+   "name": "Chlorine",
+   "odds": 129,
+   "z": 17
+  },
+  {
+   "sym": "Ar",
+   "name": "Argon",
+   "odds": 1796,
+   "z": 18
+  },
+  {
+   "sym": "K",
+   "name": "Potassium",
+   "odds": 17321,
+   "z": 19
+  },
+  {
+   "sym": "Ca",
+   "name": "Calcium",
+   "odds": 251,
+   "z": 20
+  },
+  {
+   "sym": "Sc",
+   "name": "Scandium",
+   "odds": 24945,
+   "z": 21
+  },
+  {
+   "sym": "Ti",
+   "name": "Titanium",
+   "odds": 402,
+   "z": 22
+  },
+  {
+   "sym": "V",
+   "name": "Vanadium",
+   "odds": 10823,
+   "z": 23
+  },
+  {
+   "sym": "Cr",
+   "name": "Chromium",
+   "odds": 487,
+   "z": 24
+  },
+  {
+   "sym": "Mn",
+   "name": "Manganese",
+   "odds": 1247,
+   "z": 25
+  },
+  {
+   "sym": "Fe",
+   "name": "Iron",
+   "odds": 579,
+   "z": 26
+  },
+  {
+   "sym": "Co",
+   "name": "Cobalt",
+   "odds": 3485,
+   "z": 27
+  },
+  {
+   "sym": "Ni",
+   "name": "Nickel",
+   "odds": 1247,
+   "z": 28
+  },
+  {
+   "sym": "Cu",
+   "name": "Copper",
+   "odds": 186,
+   "z": 29
+  },
+  {
+   "sym": "Zn",
+   "name": "Zinc",
+   "odds": 323,
+   "z": 30
+  },
+  {
+   "sym": "Ga",
+   "name": "Gallium",
+   "odds": 10823,
+   "z": 31
+  },
+  {
+   "sym": "Ge",
+   "name": "Germanium",
+   "odds": 13924,
+   "z": 32
+  },
+  {
+   "sym": "As",
+   "name": "Arsenic",
+   "odds": 8033,
+   "z": 33
+  },
+  {
+   "sym": "Se",
+   "name": "Selenium",
+   "odds": 3485,
+   "z": 34
+  },
+  {
+   "sym": "Br",
+   "name": "Bromine",
+   "odds": 1796,
+   "z": 35
+  },
+  {
+   "sym": "Kr",
+   "name": "Krypton",
+   "odds": 24945,
+   "z": 36
+  },
+  {
+   "sym": "Rb",
+   "name": "Rubidium",
+   "odds": 53785,
+   "z": 37
+  },
+  {
+   "sym": "Sr",
+   "name": "Strontium",
+   "odds": 1796,
+   "z": 38
+  },
+  {
+   "sym": "Y",
+   "name": "Yttrium",
+   "odds": 17321,
+   "z": 39
+  },
+  {
+   "sym": "Zr",
+   "name": "Zirconium",
+   "odds": 10823,
+   "z": 40
+  },
+  {
+   "sym": "Nb",
+   "name": "Niobium",
+   "odds": 33607,
+   "z": 41
+  },
+  {
+   "sym": "Mo",
+   "name": "Molybdenum",
+   "odds": 5578,
+   "z": 42
+  },
+  {
+   "sym": "Tc",
+   "name": "Technetium",
+   "odds": 1038663,
+   "z": 43
+  },
+  {
+   "sym": "Ru",
+   "name": "Ruthenium",
+   "odds": 53785,
+   "z": 44
+  },
+  {
+   "sym": "Rh",
+   "name": "Rhodium",
+   "odds": 150289,
+   "z": 45
+  },
+  {
+   "sym": "Pd",
+   "name": "Palladium",
+   "odds": 17321,
+   "z": 46
+  },
+  {
+   "sym": "Ag",
+   "name": "Silver",
+   "odds": 129,
+   "z": 47
+  },
+  {
+   "sym": "Cd",
+   "name": "Cadmium",
+   "odds": 4696,
+   "z": 48
+  },
+  {
+   "sym": "In",
+   "name": "Indium",
+   "odds": 20999,
+   "z": 49
+  },
+  {
+   "sym": "Sn",
+   "name": "Tin",
+   "odds": 1247,
+   "z": 50
+  },
+  {
+   "sym": "Sb",
+   "name": "Antimony",
+   "odds": 8033,
+   "z": 51
+  },
+  {
+   "sym": "Te",
+   "name": "Tellurium",
+   "odds": 24945,
+   "z": 52
+  },
+  {
+   "sym": "I",
+   "name": "Iodine",
+   "odds": 1003,
+   "z": 53
+  },
+  {
+   "sym": "Xe",
+   "name": "Xenon",
+   "odds": 43237,
+   "z": 54
+  },
+  {
+   "sym": "Cs",
+   "name": "Caesium",
+   "odds": 65204,
+   "z": 55
+  },
+  {
+   "sym": "Ba",
+   "name": "Barium",
+   "odds": 1796,
+   "z": 56
+  },
+  {
+   "sym": "La",
+   "name": "Lanthanum",
+   "odds": 24945,
+   "z": 57
+  },
+  {
+   "sym": "Ce",
+   "name": "Cerium",
+   "odds": 10823,
+   "z": 58
+  },
+  {
+   "sym": "Pr",
+   "name": "Praseodymium",
+   "odds": 65204,
+   "z": 59
+  },
+  {
+   "sym": "Nd",
+   "name": "Neodymium",
+   "odds": 43237,
+   "z": 60
+  },
+  {
+   "sym": "Pm",
+   "name": "Promethium",
+   "odds": 1549018,
+   "z": 61
+  },
+  {
+   "sym": "Sm",
+   "name": "Samarium",
+   "odds": 65204,
+   "z": 62
+  },
+  {
+   "sym": "Eu",
+   "name": "Europium",
+   "odds": 33607,
+   "z": 63
+  },
+  {
+   "sym": "Gd",
+   "name": "Gadolinium",
+   "odds": 33607,
+   "z": 64
+  },
+  {
+   "sym": "Tb",
+   "name": "Terbium",
+   "odds": 104355,
+   "z": 65
+  },
+  {
+   "sym": "Dy",
+   "name": "Dysprosium",
+   "odds": 43237,
+   "z": 66
+  },
+  {
+   "sym": "Ho",
+   "name": "Holmium",
+   "odds": 104355,
+   "z": 67
+  },
+  {
+   "sym": "Er",
+   "name": "Erbium",
+   "odds": 43237,
+   "z": 68
+  },
+  {
+   "sym": "Tm",
+   "name": "Thulium",
+   "odds": 150289,
+   "z": 69
+  },
+  {
+   "sym": "Yb",
+   "name": "Ytterbium",
+   "odds": 24945,
+   "z": 70
+  },
+  {
+   "sym": "Lu",
+   "name": "Lutetium",
+   "odds": 65204,
+   "z": 71
+  },
+  {
+   "sym": "Hf",
+   "name": "Hafnium",
+   "odds": 24945,
+   "z": 72
+  },
+  {
+   "sym": "Ta",
+   "name": "Tantalum",
+   "odds": 43237,
+   "z": 73
+  },
+  {
+   "sym": "W",
+   "name": "Tungsten",
+   "odds": 2420,
+   "z": 74
+  },
+  {
+   "sym": "Re",
+   "name": "Rhenium",
+   "odds": 65204,
+   "z": 75
+  },
+  {
+   "sym": "Os",
+   "name": "Osmium",
+   "odds": 104355,
+   "z": 76
+  },
+  {
+   "sym": "Ir",
+   "name": "Iridium",
+   "odds": 65204,
+   "z": 77
+  },
+  {
+   "sym": "Pt",
+   "name": "Platinum",
+   "odds": 1796,
+   "z": 78
+  },
+  {
+   "sym": "Au",
+   "name": "Gold",
+   "odds": 251,
+   "z": 79
+  },
+  {
+   "sym": "Hg",
+   "name": "Mercury",
+   "odds": 1003,
+   "z": 80
+  },
+  {
+   "sym": "Tl",
+   "name": "Thallium",
+   "odds": 33607,
+   "z": 81
+  },
+  {
+   "sym": "Pb",
+   "name": "Lead",
+   "odds": 186,
+   "z": 82
+  },
+  {
+   "sym": "Bi",
+   "name": "Bismuth",
+   "odds": 1247,
+   "z": 83
+  },
+  {
+   "sym": "Po",
+   "name": "Polonium",
+   "odds": 1712206,
+   "z": 84
+  },
+  {
+   "sym": "At",
+   "name": "Astatine",
+   "odds": 2643713,
+   "z": 85
+  },
+  {
+   "sym": "Rn",
+   "name": "Radon",
+   "odds": 346402,
+   "z": 86
+  },
+  {
+   "sym": "Fr",
+   "name": "Francium",
+   "odds": 4766589,
+   "z": 87
+  },
+  {
+   "sym": "Ra",
+   "name": "Radium",
+   "odds": 240527,
+   "z": 88
+  },
+  {
+   "sym": "Ac",
+   "name": "Actinium",
+   "odds": 466677,
+   "z": 89
+  },
+  {
+   "sym": "Th",
+   "name": "Thorium",
+   "odds": 10823,
+   "z": 90
+  },
+  {
+   "sym": "Pa",
+   "name": "Protactinium",
+   "odds": 746881,
+   "z": 91
+  },
+  {
+   "sym": "U",
+   "name": "Uranium",
+   "odds": 52150385,
+   "z": 92
+  },
+  {
+   "sym": "Np",
+   "name": "Neptunium",
+   "odds": 2186769,
+   "z": 93
+  },
+  {
+   "sym": "Pu",
+   "name": "Plutonium",
+   "odds": 1712206,
+   "z": 94
+  },
+  {
+   "sym": "Am",
+   "name": "Americium",
+   "odds": 1872698,
+   "z": 95
+  },
+  {
+   "sym": "Cm",
+   "name": "Curium",
+   "odds": 2643713,
+   "z": 96
+  },
+  {
+   "sym": "Bk",
+   "name": "Berkelium",
+   "odds": 4766589,
+   "z": 97
+  },
+  {
+   "sym": "Cf",
+   "name": "Californium",
+   "odds": 4081997,
+   "z": 98
+  },
+  {
+   "sym": "Es",
+   "name": "Einsteinium",
+   "odds": 7359800,
+   "z": 99
+  },
+  {
+   "sym": "Fm",
+   "name": "Fermium",
+   "odds": 7359800,
+   "z": 100
+  },
+  {
+   "sym": "Md",
+   "name": "Mendelevium",
+   "odds": 8594113,
+   "z": 101
+  },
+  {
+   "sym": "No",
+   "name": "Nobelium",
+   "odds": 9797879,
+   "z": 102
+  },
+  {
+   "sym": "Lr",
+   "name": "Lawrencium",
+   "odds": 10976097,
+   "z": 103
+  },
+  {
+   "sym": "Rf",
+   "name": "Rutherfordium",
+   "odds": 13269647,
+   "z": 104
+  },
+  {
+   "sym": "Db",
+   "name": "Dubnium",
+   "odds": 14389952,
+   "z": 105
+  },
+  {
+   "sym": "Sg",
+   "name": "Seaborgium",
+   "odds": 15495102,
+   "z": 106
+  },
+  {
+   "sym": "Bh",
+   "name": "Bohrium",
+   "odds": 16586541,
+   "z": 107
+  },
+  {
+   "sym": "Hs",
+   "name": "Hassium",
+   "odds": 17665479,
+   "z": 108
+  },
+  {
+   "sym": "Mt",
+   "name": "Meitnerium",
+   "odds": 18732937,
+   "z": 109
+  },
+  {
+   "sym": "Ds",
+   "name": "Darmstadtium",
+   "odds": 19789794,
+   "z": 110
+  },
+  {
+   "sym": "Rg",
+   "name": "Roentgenium",
+   "odds": 20836807,
+   "z": 111
+  },
+  {
+   "sym": "Cn",
+   "name": "Copernicium",
+   "odds": 21874641,
+   "z": 112
+  },
+  {
+   "sym": "Nh",
+   "name": "Nihonium",
+   "odds": 22903880,
+   "z": 113
+  },
+  {
+   "sym": "Fl",
+   "name": "Flerovium",
+   "odds": 23925043,
+   "z": 114
+  },
+  {
+   "sym": "Mc",
+   "name": "Moscovium",
+   "odds": 24938592,
+   "z": 115
+  },
+  {
+   "sym": "Lv",
+   "name": "Livermorium",
+   "odds": 25944942,
+   "z": 116
+  },
+  {
+   "sym": "Ts",
+   "name": "Tennessine",
+   "odds": 26944470,
+   "z": 117
+  },
+  {
+   "sym": "Og",
+   "name": "Oganesson",
+   "odds": 28924388,
+   "z": 118
+  }
+ ],
+ "jokes": [
+  {
+   "sym": "Um",
+   "name": "Ummium",
+   "odds": 35000000
+  },
+  {
+   "sym": "Zz",
+   "name": "Snorium",
+   "odds": 45000000
+  },
+  {
+   "sym": "Mu",
+   "name": "Mundanium",
+   "odds": 55000000
+  },
+  {
+   "sym": "Ln",
+   "name": "Lostium",
+   "odds": 70000000
+  },
+  {
+   "sym": "Df",
+   "name": "Deferrium",
+   "odds": 90000000
+  },
+  {
+   "sym": "Cz",
+   "name": "Caffeinium",
+   "odds": 120000000
+  },
+  {
+   "sym": "Mb",
+   "name": "Maybium",
+   "odds": 150000000
+  },
+  {
+   "sym": "Dj",
+   "name": "Déjà-vium",
+   "odds": 190000000
+  },
+  {
+   "sym": "Ha",
+   "name": "Halfinium",
+   "odds": 230000000
+  },
+  {
+   "sym": "Ad",
+   "name": "Administratium",
+   "odds": 280000000
+  },
+  {
+   "sym": "Pi",
+   "name": "Pi",
+   "odds": 314159265
+  },
+  {
+   "sym": "Nu",
+   "name": "Nopeium",
+   "odds": 350000000
+  },
+  {
+   "sym": "Xx",
+   "name": "Redactium",
+   "odds": 500000000
+  },
+  {
+   "sym": "Uo",
+   "name": "Unobtainium",
+   "odds": 700000000
+  },
+  {
+   "sym": "Zo",
+   "name": "Zoomium",
+   "odds": 1000000000
+  },
+  {
+   "sym": "Gg",
+   "name": "Gameoverium",
+   "odds": 1500000000
+  }
+ ],
+ "catalysts": [
+  {
+   "id": "alkali",
+   "name": "Alkali Metals Catalyst",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "alkaline",
+   "name": "Alkaline Earth Catalyst",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "halogen",
+   "name": "Halogen Catalyst",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "noble",
+   "name": "Noble Gas Catalyst",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "nonmetal",
+   "name": "Nonmetal Catalyst",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "spark",
+   "name": "Spark",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "trickle",
+   "name": "Quark Trickle",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "transition",
+   "name": "Transition Metals Catalyst",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "metalloid",
+   "name": "Metalloid Catalyst",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "post",
+   "name": "Post-transition Catalyst",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "kindling",
+   "name": "Kindling",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "accelerant",
+   "name": "Accelerant",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "primer",
+   "name": "Chain Primer",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "lanth",
+   "name": "Lanthanide Catalyst",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "actin",
+   "name": "Actinide Catalyst",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "ignition",
+   "name": "Ignition",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "linked",
+   "name": "Linked Reaction",
+   "tier": 5,
+   "joke": false
+  },
+  {
+   "id": "surge",
+   "name": "Quark Surge",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "superheavy",
+   "name": "Superheavy Catalyst",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "blaze",
+   "name": "Blaze",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "twin",
+   "name": "Twin Reactor",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "lens",
+   "name": "Precision Lens",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "inferno",
+   "name": "Inferno",
+   "tier": 4,
+   "joke": false
+  },
+  {
+   "id": "storm",
+   "name": "Chain Storm",
+   "tier": 4,
+   "joke": false
+  },
+  {
+   "id": "engine",
+   "name": "Quark Engine",
+   "tier": 4,
+   "joke": false
+  },
+  {
+   "id": "prism",
+   "name": "Focus Prism",
+   "tier": 4,
+   "joke": false
+  },
+  {
+   "id": "fusion",
+   "name": "Fusion Core",
+   "tier": 5,
+   "joke": false
+  },
+  {
+   "id": "horizon",
+   "name": "Event Horizon",
+   "tier": 5,
+   "joke": false
+  },
+  {
+   "id": "singularity",
+   "name": "Singularity",
+   "tier": 6,
+   "joke": false
+  },
+  {
+   "id": "stone",
+   "name": "Philosopher's Stone",
+   "tier": 6,
+   "joke": false
+  },
+  {
+   "id": "barometer",
+   "name": "Barometer",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "courier",
+   "name": "Courier",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "qlens",
+   "name": "Quark Lens",
+   "tier": 0,
+   "joke": false
+  },
+  {
+   "id": "stabiliser",
+   "name": "Stabiliser",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "rod",
+   "name": "Lightning Rod",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "magnet",
+   "name": "Family Magnet",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "leveller",
+   "name": "Leveller",
+   "tier": 1,
+   "joke": false
+  },
+  {
+   "id": "reagent",
+   "name": "Practical Reagent",
+   "tier": 1,
+   "joke": true
+  },
+  {
+   "id": "grant",
+   "name": "Grant Funding",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "heavy",
+   "name": "Heavy Water",
+   "tier": 2,
+   "joke": false
+  },
+  {
+   "id": "punchline",
+   "name": "Punchline",
+   "tier": 2,
+   "joke": true
+  },
+  {
+   "id": "accel",
+   "name": "Particle Accelerator",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "bondagent",
+   "name": "Bonding Agent",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "logger",
+   "name": "Event Logger",
+   "tier": 3,
+   "joke": false
+  },
+  {
+   "id": "laugh",
+   "name": "Laugh Track",
+   "tier": 3,
+   "joke": true
+  },
+  {
+   "id": "stormseed",
+   "name": "Storm Seed",
+   "tier": 4,
+   "joke": false
+  },
+  {
+   "id": "colliderkey",
+   "name": "Collider Key",
+   "tier": 6,
+   "joke": false
+  },
+  {
+   "id": "gag",
+   "name": "Running Gag",
+   "tier": 4,
+   "joke": true
+  },
+  {
+   "id": "twinhorizon",
+   "name": "Twin Horizon",
+   "tier": 5,
+   "joke": false
+  },
+  {
+   "id": "containment",
+   "name": "Containment Field",
+   "tier": 5,
+   "joke": false
+  },
+  {
+   "id": "singseed",
+   "name": "Singularity Seed",
+   "tier": 5,
+   "joke": false
+  },
+  {
+   "id": "insidejoke",
+   "name": "Inside Joke",
+   "tier": 6,
+   "joke": true
+  }
+ ],
+ "achievements": [
+  {
+   "name": "Water",
+   "formula": "H2O"
+  },
+  {
+   "name": "Carbon dioxide",
+   "formula": "CO2"
+  },
+  {
+   "name": "Table salt",
+   "formula": "ClNa"
+  },
+  {
+   "name": "Oxygen",
+   "formula": "O2"
+  },
+  {
+   "name": "Ozone",
+   "formula": "O3"
+  },
+  {
+   "name": "Ammonia",
+   "formula": "NH3"
+  },
+  {
+   "name": "Methane",
+   "formula": "CH4"
+  },
+  {
+   "name": "Hydrogen peroxide",
+   "formula": "H2O2"
+  },
+  {
+   "name": "Ethylene",
+   "formula": "C2H4"
+  },
+  {
+   "name": "Acetylene",
+   "formula": "C2H2"
+  },
+  {
+   "name": "Hydrochloric acid",
+   "formula": "HCl"
+  },
+  {
+   "name": "Sulfuric acid",
+   "formula": "H2SO4"
+  },
+  {
+   "name": "Nitric acid",
+   "formula": "HNO3"
+  },
+  {
+   "name": "Sodium hydroxide",
+   "formula": "NaOH"
+  },
+  {
+   "name": "Potassium hydroxide",
+   "formula": "KOH"
+  },
+  {
+   "name": "Calcium carbonate",
+   "formula": "CaCO3"
+  },
+  {
+   "name": "Quicklime",
+   "formula": "CaO"
+  },
+  {
+   "name": "Slaked lime",
+   "formula": "Ca(OH)2"
+  },
+  {
+   "name": "Epsom salt",
+   "formula": "MgSO4"
+  },
+  {
+   "name": "Copper sulfate",
+   "formula": "CuSO4"
+  },
+  {
+   "name": "Silica",
+   "formula": "SiO2"
+  },
+  {
+   "name": "Hydrogen gas",
+   "formula": "H2"
+  },
+  {
+   "name": "Nitrogen gas",
+   "formula": "N2"
+  },
+  {
+   "name": "Chlorine gas",
+   "formula": "Cl2"
+  },
+  {
+   "name": "Hydrofluoric acid",
+   "formula": "HF"
+  },
+  {
+   "name": "Carbon monoxide",
+   "formula": "CO"
+  },
+  {
+   "name": "Hydrogen cyanide",
+   "formula": "HCN"
+  },
+  {
+   "name": "Nitric oxide",
+   "formula": "NO"
+  },
+  {
+   "name": "Nitrogen dioxide",
+   "formula": "NO2"
+  },
+  {
+   "name": "Nitrous oxide",
+   "formula": "N2O"
+  },
+  {
+   "name": "Sulfur dioxide",
+   "formula": "SO2"
+  },
+  {
+   "name": "Sulfur trioxide",
+   "formula": "SO3"
+  },
+  {
+   "name": "Hydrogen sulfide",
+   "formula": "H2S"
+  },
+  {
+   "name": "Hydrobromic acid",
+   "formula": "HBr"
+  },
+  {
+   "name": "Hydroiodic acid",
+   "formula": "HI"
+  },
+  {
+   "name": "Lithium chloride",
+   "formula": "LiCl"
+  },
+  {
+   "name": "Potassium chloride",
+   "formula": "KCl"
+  },
+  {
+   "name": "Potassium iodide",
+   "formula": "KI"
+  },
+  {
+   "name": "Sodium fluoride",
+   "formula": "NaF"
+  },
+  {
+   "name": "Fluorite",
+   "formula": "CaF2"
+  },
+  {
+   "name": "Silver chloride",
+   "formula": "AgCl"
+  },
+  {
+   "name": "Silver nitrate",
+   "formula": "AgNO3"
+  },
+  {
+   "name": "Sodium nitrate",
+   "formula": "NaNO3"
+  },
+  {
+   "name": "Zinc oxide",
+   "formula": "ZnO"
+  },
+  {
+   "name": "Titanium dioxide",
+   "formula": "TiO2"
+  },
+  {
+   "name": "Alumina",
+   "formula": "Al2O3"
+  },
+  {
+   "name": "Galena",
+   "formula": "PbS"
+  },
+  {
+   "name": "Cassiterite",
+   "formula": "SnO2"
+  },
+  {
+   "name": "Sodium bromide",
+   "formula": "NaBr"
+  },
+  {
+   "name": "Potassium bromide",
+   "formula": "KBr"
+  },
+  {
+   "name": "Magnesia",
+   "formula": "MgO"
+  },
+  {
+   "name": "Calcium chloride",
+   "formula": "CaCl2"
+  },
+  {
+   "name": "Silicon carbide",
+   "formula": "SiC"
+  },
+  {
+   "name": "Boron nitride",
+   "formula": "BN"
+  },
+  {
+   "name": "Boron trioxide",
+   "formula": "B2O3"
+  },
+  {
+   "name": "Boric acid",
+   "formula": "H3BO3"
+  },
+  {
+   "name": "Formaldehyde",
+   "formula": "CH2O"
+  },
+  {
+   "name": "Formic acid",
+   "formula": "CH2O2"
+  },
+  {
+   "name": "Carbonic acid",
+   "formula": "H2CO3"
+  },
+  {
+   "name": "Hypochlorous acid",
+   "formula": "HClO"
+  },
+  {
+   "name": "Sodium hypochlorite",
+   "formula": "NaClO"
+  },
+  {
+   "name": "Calcium sulfate",
+   "formula": "CaSO4"
+  },
+  {
+   "name": "Magnesium chloride",
+   "formula": "MgCl2"
+  },
+  {
+   "name": "Pyrite",
+   "formula": "FeS2"
+  },
+  {
+   "name": "Cuprite",
+   "formula": "Cu2O"
+  },
+  {
+   "name": "Copper oxide",
+   "formula": "CuO"
+  },
+  {
+   "name": "Zinc sulfide",
+   "formula": "ZnS"
+  },
+  {
+   "name": "Cinnabar",
+   "formula": "HgS"
+  },
+  {
+   "name": "Silver sulfide",
+   "formula": "Ag2S"
+  },
+  {
+   "name": "Silver bromide",
+   "formula": "AgBr"
+  },
+  {
+   "name": "Lithium oxide",
+   "formula": "Li2O"
+  },
+  {
+   "name": "Lithium hydroxide",
+   "formula": "LiOH"
+  },
+  {
+   "name": "Manganese dioxide",
+   "formula": "MnO2"
+  },
+  {
+   "name": "Tungsten trioxide",
+   "formula": "WO3"
+  },
+  {
+   "name": "Zirconia",
+   "formula": "ZrO2"
+  },
+  {
+   "name": "Carbon disulfide",
+   "formula": "CS2"
+  },
+  {
+   "name": "Methanol",
+   "formula": "CH4O"
+  },
+  {
+   "name": "Phosphine",
+   "formula": "PH3"
+  },
+  {
+   "name": "Lead oxide",
+   "formula": "PbO"
+  },
+  {
+   "name": "Tin(II) chloride",
+   "formula": "SnCl2"
+  },
+  {
+   "name": "Cadmium sulfide",
+   "formula": "CdS"
+  },
+  {
+   "name": "Barium oxide",
+   "formula": "BaO"
+  },
+  {
+   "name": "Strontium oxide",
+   "formula": "SrO"
+  },
+  {
+   "name": "Caesium chloride",
+   "formula": "CsCl"
+  },
+  {
+   "name": "Sodium iodide",
+   "formula": "NaI"
+  },
+  {
+   "name": "Potassium fluoride",
+   "formula": "KF"
+  },
+  {
+   "name": "Germanium dioxide",
+   "formula": "GeO2"
+  },
+  {
+   "name": "Nickel oxide",
+   "formula": "NiO"
+  },
+  {
+   "name": "Cobalt oxide",
+   "formula": "CoO"
+  },
+  {
+   "name": "Lithium fluoride",
+   "formula": "LiF"
+  },
+  {
+   "name": "Silver iodide",
+   "formula": "AgI"
+  },
+  {
+   "name": "Platinum dioxide",
+   "formula": "PtO2"
+  },
+  {
+   "name": "Thorium dioxide",
+   "formula": "ThO2"
+  },
+  {
+   "name": "Iridium dioxide",
+   "formula": "IrO2"
+  },
+  {
+   "name": "Sodium hydride",
+   "formula": "NaH"
+  },
+  {
+   "name": "Calcium hydride",
+   "formula": "CaH2"
+  },
+  {
+   "name": "Lithium hydride",
+   "formula": "LiH"
+  },
+  {
+   "name": "Magnesium fluoride",
+   "formula": "MgF2"
+  },
+  {
+   "name": "Calcium carbide",
+   "formula": "CaC2"
+  },
+  {
+   "name": "Wustite",
+   "formula": "FeO"
+  }
+ ],
+ "tiers": [
+  "Common",
+  "Uncommon",
+  "Rare",
+  "Epic",
+  "Legendary",
+  "Mythic",
+  "Secret"
+ ]
+}
