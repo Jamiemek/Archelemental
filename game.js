@@ -6148,6 +6148,7 @@ function go(screen) {
         apRender();
     }
     if (screen === 'game') {
+        apRenderLog();
         const col = document.querySelector('#rollResults .roll-result-column');
         if (col && col._mr) {
             col.querySelectorAll('.mr-chip b').forEach(b => fitText(b, b.textContent, b.parentElement.clientWidth - 10, 18));
@@ -13367,9 +13368,7 @@ function apSay(text, kind) {
     if (apLog.length > 200) {
         apLog.shift();
     }
-    if ($('ap').classList.contains('active')) {
-        apRenderLog();
-    }
+    apRenderLog();
 }
 function apSetStatus(s, why) {
     apStatus = s;
@@ -13719,10 +13718,23 @@ function apRenderGoal() {
     $('apGoal').innerHTML = rows.map(([k, v]) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>').join('') +
         (apState.goal ? '<div class="ap-done"><dt>Goal</dt><dd>Complete</dd></div>' : '');
 }
+// the same messages on the Archipelago page and the roll page
 function apRenderLog() {
-    const el = $('apLog');
-    el.innerHTML = apLog.length ? apLog.slice(-80).map(m => '<p class="ap-line ' + m.kind + '">' + esc(m.text) + '</p>').join('') : '<p class="muted">Messages from the server show up here.</p>';
-    el.scrollTop = el.scrollHeight;
+    const html = apLog.length ? apLog.slice(-120).map(m => '<p class="ap-line ' + m.kind + '">' + esc(m.text) + '</p>').join('') : '<p class="muted">Messages from the server show up here.</p>';
+    ['apLog', 'rollLog'].forEach(id => {
+        const el = $(id);
+        if (!el.offsetParent) {
+            el._stale = true;
+            return;
+        }
+        // only follow new messages if you were already at the bottom, so scrolling back to read isn't interrupted
+        const atEnd = el._stale || el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+        el.innerHTML = html;
+        el._stale = false;
+        if (atEnd) {
+            el.scrollTop = el.scrollHeight;
+        }
+    });
 }
 $('apGo').onclick = () => {
     if (apStatus === 'connected' || apStatus === 'connecting') {
@@ -13736,14 +13748,14 @@ $('apGo').onclick = () => {
     apRetry = 0;
     apConnect();
 };
-$('apChat').onsubmit = e => {
+[['apChat', 'apSay'], ['rollChat', 'rollSay']].forEach(([form, box]) => $(form).onsubmit = e => {
     e.preventDefault();
-    const t = $('apSay').value.trim();
+    const t = $(box).value.trim();
     if (t && apStatus === 'connected') {
         apSend({ cmd: 'Say', text: t });
-        $('apSay').value = '';
+        $(box).value = '';
     }
-};
+});
 $('apHint').onclick = () => {
     if (apStatus === 'connected') {
         apSend({ cmd: 'Say', text: '!hint' });

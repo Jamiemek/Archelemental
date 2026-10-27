@@ -263,6 +263,7 @@ function go(screen) {
         apRender();
     }
     if (screen === 'game') {
+        apRenderLog();
         const col = document.querySelector('#rollResults .roll-result-column');
         if (col && col._mr) {
             col.querySelectorAll('.mr-chip b').forEach(b => fitText(b, b.textContent, b.parentElement.clientWidth - 10, 18));

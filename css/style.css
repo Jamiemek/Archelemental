@@ -3206,3 +3206,16 @@ html.fx-on body {
   font-family: var(--head);
   font-size: 17px;
 }
+/* the chat on the roll page: tall and easy to read */
+.roll-chat {
+  margin-bottom: 22px;
+}
+.ap-log-big {
+  height: clamp(320px, 55vh, 620px);
+  padding: 10px 12px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.ap-log-big .ap-line {
+  margin-bottom: 6px;
+}
