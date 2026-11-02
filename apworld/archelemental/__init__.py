@@ -1,13 +1,16 @@
 import logging
+import math
 from typing import Any, ClassVar
 
-from BaseClasses import Location, LocationProgressType, Region, Tutorial
+from BaseClasses import ItemClassification, Location, LocationProgressType, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
+from worlds.generic.Rules import add_item_rule
 
 from .data import (
-    ACHIEVEMENT_BASE, ACHIEVEMENTS, BOND_BASE, BOND_NODES, BONDS_CATALYSTS, CATALYST_BASE, CATALYSTS,
+    ACHIEVEMENT_BASE, ACHIEVEMENTS, BOND_BASE, BOND_NODES, BONDS_CATALYSTS, CATALYST_BASE, CATALYSTS, DEATHLINK_BASE,
     COSMETICS, ELEMENT_BASE, ELEMENTS, EVENT_CATALYSTS, ION_BASE, ION_TIERS, JOKE_BASE, JOKES, SECRET_TIER,
-    achievement_location, bond_checks, bond_item, bond_location, catalyst_location, element_location, ion_location, joke_location,
+    achievement_location, bond_checks, bond_item, bond_location, catalyst_location, deathlink_location, element_location,
+    ion_location, joke_location,
 )
 from .items import (
     BUNDLES, ELEMENT_ITEMS, FILLER_TIER_WEIGHTS, FIXED_ITEMS, ITEM_NAME_TO_ID, ITEMS, LUCK_BOOSTS, TRAPS,
@@ -15,6 +18,8 @@ from .items import (
 )
 from .logic import luck_needed, rolls_for_compound, rolls_for_element, rolls_for_ion
 from .options import ArchelementalOptions, option_groups
+
+ELEMENT_NAMES = list(ELEMENT_ITEMS.values())
 
 LOCATION_NAME_TO_ID = {}
 for e in ELEMENTS:
@@ -31,6 +36,8 @@ for e in ELEMENTS:
         LOCATION_NAME_TO_ID[ion_location(e, t)] = ION_BASE + (e["z"] - 1) * len(ION_TIERS) + t + 1
 for n in range(BOND_NODES):
     LOCATION_NAME_TO_ID[bond_location(n)] = BOND_BASE + n
+for i in range(200):
+    LOCATION_NAME_TO_ID[deathlink_location(i)] = DEATHLINK_BASE + i + 1
 
 # a check whose expected rolls at full luck is this many times the budget only ever gets filler
 HOPELESS = 20
@@ -156,8 +163,11 @@ class ArchelementalWorld(World):
             names += [achievement_location(a) for a in ACHIEVEMENTS]
         if o.ionization_frenzy:
             names += [ion_location(e, t) for e in ELEMENTS for t in range(len(ION_TIERS))]
-        self.lab_names = names
         self.bond_ids, self.bond_parent = bond_checks(o.bond_slots.value) if o.bonds_tree else ([], {})
+        # deathlink checks: 5% on top of everything else, set off by random rolls
+        self.deathlink_checks = math.ceil((len(names) + len(self.bond_ids)) * 0.05) if o.death_link else 0
+        names += [deathlink_location(i) for i in range(self.deathlink_checks)]
+        self.lab_names = names
         self.location_names = names + [bond_location(n) for n in self.bond_ids]
 
     def create_regions(self) -> None:
@@ -188,7 +198,11 @@ class ArchelementalWorld(World):
 
 
     def create_item(self, name: str) -> ArchelementalItem:
-        return ArchelementalItem(name, ITEMS[name][1], ITEMS[name][0], self.player)
+        cls = ITEMS[name][1]
+        # with Element Frenzy the goal is made of these, so they have to count
+        if name in ELEMENT_NAMES and self.options.element_frenzy:
+            cls = ItemClassification.progression
+        return ArchelementalItem(name, cls, ITEMS[name][0], self.player)
 
     def filler_catalysts(self):
         out = []
@@ -226,12 +240,12 @@ class ArchelementalWorld(World):
         for name, k in self.boost_counts.items():
             req += [name] * k
         req += [c["name"] for c in COSMETICS]
-        req += [bond_item(n) for n in self.bond_ids]
+        req += list(dict.fromkeys(bond_item(n) for n in self.bond_ids))
         if o.element_frenzy:
             req += [ELEMENT_ITEMS[e["sym"]] for e in ELEMENTS]
         self.required = req
-        traps = ["Roll Speed Trap"] * o.roll_speed_traps.value + ["Luck Trap"] * o.luck_traps.value \
-            + ["Quark Drop Trap"] * o.quark_drop_traps.value
+        traps = ["Disable Autoroll Trap"] * o.disable_autoroll_traps.value \
+            + ["Drop All Quarks Trap"] * o.drop_all_quarks_traps.value + ["All Buffs Gone Trap"] * o.all_buffs_gone_traps.value
         bundles = ["Quark Bundle 100"] * o.bundles_100.value + ["Quark Bundle 1000"] * o.bundles_1000.value \
             + ["Quark Bundle 10000"] * o.bundles_10000.value + ["Quark Bundle 100000"] * o.bundles_100000.value
         cats = [c["name"] for c in self.filler_catalysts() for _ in range(o.catalyst_copies.value)]
@@ -306,7 +320,17 @@ class ArchelementalWorld(World):
                 conditions.append(lambda state, k=luck: self.luck_of(state) >= k)
             if conditions:
                 loc.access_rule = lambda state, cs=tuple(conditions): all(c(state) for c in cs)
-        goal_luck = sorted(self.need[element_location(e)] for e in ELEMENTS)[o.elements_required.value - 1]
+        frenzy = bool(o.element_frenzy)
+        # an Element Frenzy player's elements stay off the checks that can take longest, in every Archelemental world,
+        # whether or not this one has Element Frenzy on
+        slow = {loc.name for loc in self.multiworld.get_region("Lab", p).locations
+                if " ion " in loc.name or loc.name.startswith(("Achievement: ", "Deathlink Check"))
+                or any(loc.name == joke_location(j) for j in JOKES)}
+        for loc in self.multiworld.get_region("Lab", p).locations:
+            if loc.name in slow:
+                add_item_rule(loc, lambda item: item.game != self.game or item.name not in ELEMENT_NAMES)
+        goal_luck = 0 if frenzy else sorted(self.need[element_location(e)] for e in ELEMENTS)[o.elements_required.value - 1]
+        need_elements = o.elements_required.value
         need_jokes = o.jokes_required.value
         if need_jokes:
             goal_luck = max(goal_luck, sorted(self.need[joke_location(j)] for j in JOKES)[need_jokes - 1])
@@ -315,6 +339,8 @@ class ArchelementalWorld(World):
             goal_luck = max(goal_luck, sorted(self.need[achievement_location(a)] for a in ACHIEVEMENTS)[need_ach - 1])
         def goal(state):
             if self.luck_of(state) < goal_luck:
+                return False
+            if frenzy and not state.has_from_list(ELEMENT_NAMES, p, need_elements):
                 return False
             if need_jokes and not state.has("Joke Table Unlock", p):
                 return False
@@ -330,4 +356,6 @@ class ArchelementalWorld(World):
         )
         data["bond_nodes"] = BOND_NODES
         data["ion_levels"] = self.ion_levels
+        data["death_link"] = int(bool(self.options.death_link))
+        data["deathlink_checks"] = self.deathlink_checks
         return data

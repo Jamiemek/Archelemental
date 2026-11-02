@@ -1,6 +1,6 @@
 from BaseClasses import Item, ItemClassification
 
-from .data import BOND_NODES, CATALYSTS, COSMETICS, ELEMENTS, SECRET_TIER, bond_item
+from .data import BOND_GROUP, BOND_NODES, CATALYSTS, COSMETICS, ELEMENTS, SECRET_TIER, bond_item
 
 P = ItemClassification.progression
 PS = ItemClassification.progression_skip_balancing
@@ -41,10 +41,11 @@ BUNDLES = {
     "Quark Bundle 100000": (24, 100000),
 }
 
+# 25 to 27 were the old Roll Speed, Luck and Quark Drop Traps
 TRAPS = {
-    "Roll Speed Trap": 25,
-    "Luck Trap": 26,
-    "Quark Drop Trap": 27,
+    "Disable Autoroll Trap": 28,
+    "Drop All Quarks Trap": 29,
+    "All Buffs Gone Trap": 30,
 }
 
 ITEMS = {}
@@ -76,9 +77,10 @@ for e in ELEMENTS:
     ITEMS[name] = (ELEMENT_ITEM_BASE + e["z"], U)
     ELEMENT_ITEMS[e["sym"]] = name
 
-BOND_ITEM_BASE = 10000
-for n in range(BOND_NODES):
-    ITEMS[bond_item(n)] = (BOND_ITEM_BASE + n, PS)
+# 10000 and up held one slot's requirements each, up to 1.3.0; groups start from 30000
+BOND_ITEM_BASE = 30000
+for n in range(0, BOND_NODES, BOND_GROUP):
+    ITEMS[bond_item(n)] = (BOND_ITEM_BASE + n // BOND_GROUP, PS)
 
 ITEM_NAME_TO_ID = {name: data[0] for name, data in ITEMS.items()}
 

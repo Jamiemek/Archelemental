@@ -43,6 +43,10 @@ def main():
            for m in re.finditer(r"formula: '([^']+)', name: '((?:[^'\\]|\\.)+)'", block(data, 'ACHIEVEMENTS'))]
     tiers = [m.group(1) for m in re.finditer(r"\{ name: '(\w+)', col:", block(shop, 'CAT_TIERS'))]
     graph = json.loads(subprocess.run(['node', os.path.join(ROOT, 'tools', 'bondgraph.js')], check=True, capture_output=True, text=True).stdout)
+    # the listed odds are reshaped when the game loads, so take them as the game has them
+    odds = graph.pop('odds')
+    for e in els:
+        e['odds'] = odds[e['sym']]
     bonds_src = read('js/bonds.js')
     cos = re.search(r"const COSMETIC_NAMES = \{(.*?)\n\};", bonds_src, re.S).group(1)
     cosmetics = [{'id': m.group(1), 'name': m.group(2)} for m in re.finditer(r"(\w+): '([^']+)'", cos)]

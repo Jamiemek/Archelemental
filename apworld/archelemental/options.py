@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from Options import Choice, DefaultOnToggle, OptionGroup, PerGameCommonOptions, Range, Toggle
+from Options import Choice, DeathLink as BaseDeathLink, DefaultOnToggle, OptionGroup, PerGameCommonOptions, Range, Toggle
 
 from .data import BOND_NODES
 
@@ -200,25 +200,32 @@ class Bundles100000(Range):
     default = 10
 
 
-class RollSpeedTraps(Range):
-    """How many Roll Speed Traps replace filler. Each slows your scanner for a few minutes."""
-    display_name = "Roll Speed Traps"
+class DeathLink(BaseDeathLink):
+    """Adds Deathlink Checks, 5% more on top of your other checks. Each one goes off on a random roll and sends a
+    deathlink to everyone else who has it on. A deathlink sent to you sets off all three traps at once: autoroll off
+    and all buffs gone for 5 minutes, and every quark you're holding lost."""
+
+
+class DisableAutorollTraps(Range):
+    """How many Disable Autoroll Traps replace filler. Each switches autoroll off for 5 minutes."""
+    display_name = "Disable Autoroll Traps"
     range_start = 0
     range_end = 50
     default = 0
 
 
-class LuckTraps(Range):
-    """How many Luck Traps replace filler. Each cuts your luck for a few minutes."""
-    display_name = "Luck Traps"
+class DropAllQuarksTraps(Range):
+    """How many Drop All Quarks Traps replace filler. Each takes every quark you're holding."""
+    display_name = "Drop All Quarks Traps"
     range_start = 0
     range_end = 50
     default = 0
 
 
-class QuarkDropTraps(Range):
-    """How many Quark Drop Traps replace filler. Each cuts the quarks you earn for a few minutes."""
-    display_name = "Quark Drop Traps"
+class AllBuffsGoneTraps(Range):
+    """How many All Buffs Gone Traps replace filler. For 5 minutes each, your luck, scanner and autoroll speed,
+    bonus rolls, chain chance, quark gain and running catalysts all stop working."""
+    display_name = "All Buffs Gone Traps"
     range_start = 0
     range_end = 50
     default = 0
@@ -251,9 +258,10 @@ class ArchelementalOptions(PerGameCommonOptions):
     bundles_1000: Bundles1000
     bundles_10000: Bundles10000
     bundles_100000: Bundles100000
-    roll_speed_traps: RollSpeedTraps
-    luck_traps: LuckTraps
-    quark_drop_traps: QuarkDropTraps
+    disable_autoroll_traps: DisableAutorollTraps
+    drop_all_quarks_traps: DropAllQuarksTraps
+    all_buffs_gone_traps: AllBuffsGoneTraps
+    death_link: DeathLink
 
 
 option_groups = [
@@ -263,5 +271,5 @@ option_groups = [
     OptionGroup("Game", [BondsTree, BondSlots, Shop, Events, RestockMinutes, PlaceAutorollEarly]),
     OptionGroup("Luck", [LuckBoost15, LuckBoost30, LuckBoost60, LuckBoost90, MinimumLuckBoosts, RollBudget]),
     OptionGroup("Filler", [CatalystCopies, Bundles100, Bundles1000, Bundles10000, Bundles100000]),
-    OptionGroup("Traps", [RollSpeedTraps, LuckTraps, QuarkDropTraps]),
+    OptionGroup("Traps", [DisableAutorollTraps, DropAllQuarksTraps, AllBuffsGoneTraps, DeathLink]),
 ]

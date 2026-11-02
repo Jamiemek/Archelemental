@@ -167,6 +167,10 @@ function catBonus() {
         luck: 0, speed: 0, quark: 0, extra: 0, chain: 0, chainMax: false, fam: {},
         event: 0, lens: 0, heavy: 0, joke: 0, laugh: false, gag: 0, level: false
     };
+    // an All Buffs Gone Trap stops running catalysts doing anything, though their time still runs down
+    if (apTrapOn('buffs')) {
+        return r;
+    }
     activeList().forEach(({ a, c }) => {
         if (!a.until) {
             return;

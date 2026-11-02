@@ -30,6 +30,7 @@ itself when you come back, and anything you found while offline is sent as soon 
 - The 16 joke elements (optional, on by default; they need the Joke Table Unlock).
 - The 100 compound achievements (optional, off by default).
 - Ionization Frenzy (optional): all six ion tiers of every element.
+- Deathlink Checks (optional, with `death_link`): 5% more checks, each set off by a random roll and sending a deathlink.
 
 ## Items
 
@@ -37,12 +38,13 @@ itself when you come back, and anything you found while offline is sent as soon 
 - **Progressive**: Bonus Roll (3), Shop Luck (8), Shop Reset Speed (8), Shop Slot (5), Autoroll Speed (8), Scanner Speed (8),
   Event Spawn Chance (8), Quark Gain (8), Chain Boost (3).
 - **Unlocks**: Autoroll, Catalyst Rolling, Shop Hold, Joke Table, Ionization.
-- **Bond N Requirements**: one per bonds tree slot that's a check. It gives the elements that slot asks for, once, and they're used up
-  when you take the slot.
+- **Bond Requirements**: one for every 25 bonds tree slots that are checks ("Bond Slots 26-50 Requirements"). It gives
+  each of those slots the elements it asks for, once, and they're used up when you take the slot.
 - **Cosmetics**: every scanner, page and spawn effect skin.
 - **Filler**: up to 50 of each catalyst and four sizes of Quark Bundle (100, 1,000, 10,000, 100,000). Filler is trimmed or
   topped up to match the number of checks.
-- **Traps** (optional): Roll Speed, Luck and Quark Drop, each lasting a few minutes.
+- **Traps** (optional): Disable Autoroll and All Buffs Gone (5 minutes each, stacking up to 15), and Drop All Quarks, which
+  takes every quark you're holding.
 
 ## Game modes
 
@@ -69,14 +71,17 @@ Both can be on, or neither.
 | `luck_boosts_15/30/60/90`, `minimum_luck_boosts` | How many of each luck boost, and the fewest in total | 5 each, 8 |
 | `roll_budget` | Rolls the logic will have you spend hunting one thing | 5000 |
 | `catalyst_copies`, `bundles_100` ... `bundles_100000` | The filler | 50, 200/100/50/10 |
-| `roll_speed_traps`, `luck_traps`, `quark_drop_traps` | Traps that replace filler | 0 |
+| `disable_autoroll_traps`, `drop_all_quarks_traps`, `all_buffs_gone_traps` | Traps that replace filler | 0 |
+| `death_link` | Deathlink, with 5% extra Deathlink Checks that go off on random rolls | off |
 
 ## How the logic works
 
 The game weights each element by how rare it is, and luck tilts that toward the rarer ones. For every check the APWorld
 works out how many rolls it would take at each amount of luck, and expects it once the luck boosts you hold get it within
 `roll_budget`. Bonds tree slots follow the tree: you can take a slot once you've taken the one before it and hold its
-Bond N Requirements. Slots past `bond_slots` can still be filled in, but they aren't checks.
+group's Bond Requirements. Slots past `bond_slots` can still be filled in, but they aren't checks. With Element Frenzy
+the elements count towards the goal, and they're kept off joke elements, ion tiers, achievements, Deathlink Checks and
+anything else that would take more than `roll_budget` rolls even at full luck.
 
 If there are more items than checks, the least important upgrades and the cosmetics start in your inventory instead.
 

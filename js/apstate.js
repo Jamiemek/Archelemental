@@ -6,28 +6,34 @@ const AP_ITEM = {
     15: 'Autoroll Unlock', 16: 'Progressive Chain Boost', 17: 'Joke Table Unlock', 18: 'Ionization Unlock',
     19: 'Progressive + Ion Chance', 20: 'Progressive - Ion Chance',
     21: 'Quark Bundle 100', 22: 'Quark Bundle 1000', 23: 'Quark Bundle 10000', 24: 'Quark Bundle 100000',
-    25: 'Roll Speed Trap', 26: 'Luck Trap', 27: 'Quark Drop Trap'
+    28: 'Disable Autoroll Trap', 29: 'Drop All Quarks Trap', 30: 'All Buffs Gone Trap'
 };
 const AP_ID = Object.fromEntries(Object.entries(AP_ITEM).map(([k, v]) => [v, +k]));
 const AP_BOOST = { 7: 15, 8: 30, 9: 60, 10: 90 };
 const AP_BUNDLE = { 21: 100, 22: 1000, 23: 10000, 24: 100000 };
-const AP_TRAP = { 25: 'speed', 26: 'luck', 27: 'quark' };
+// timed traps; Drop All Quarks happens at once
+const AP_TRAP = { 28: 'auto', 30: 'buffs' };
+const AP_QUARK_WIPE = 29;
 // cosmetics are items 40 and up, in this order (the same as the APWorld's list)
 const AP_COS_BASE = 40;
 const AP_COS = ['oscilloscope', 'holographic', 'blueprint', 'notebook', 'retro', 'astral', 'warp', 'gameover'];
-// Element Frenzy: elements are items 5000 + atomic number. Bond requirements are items 10000 + slot
+// Element Frenzy: elements are items 5000 + atomic number. Bond requirements are items 30000 + group of 25 slots
+// (seeds from before 1.4.0 have one item per slot, 10000 + slot)
 const AP_ELEMENT_BASE = 5000;
 const AP_BOND_ITEM = 10000;
 const AP_BOND_END = 20000;
+const AP_BOND_GROUP_ITEM = 30000;
+const AP_BOND_GROUP = 25;
 const AP_STEP = {
     shopLuckStock: 7.5, shopLuckPrice: 3.75, reset: 1, slot: 1, autoroll: 100, scanner: 25, event: 12.5, quark: 12.5,
     ionPlus: 0.01, ionMinus: 0.002
 };
 const AP_TRAP_MS = 5 * 60000;
 // what this save knows: the seed's options, every item received so far, and how many of the one-off items have been used
-let apState = loadJSON('apState', { slotData: null, items: [], spent: 0, catSeen: [], goal: false, checked: [], ions: {}, traps: [] });
+let apState = loadJSON('apState', { slotData: null, items: [], spent: 0, catSeen: [], goal: false, checked: [], ions: {}, traps: [], deathlinks: 0, deathlinkOwed: false });
 apState.ions = apState.ions || {};
 apState.traps = apState.traps || [];
+apState.deathlinks = apState.deathlinks || 0;
 const apSaveState = () => {
     try {
         localStorage.setItem('apState', JSON.stringify(apState));
@@ -44,7 +50,8 @@ const apSaveId = () => {
 // options default to everything on until a seed says otherwise
 const AP_DEFAULTS = {
     elements_required: 118, jokes_required: 0, achievements_required: 0, element_frenzy: 0, ionization_frenzy: 0, joke_elements: 1,
-    catalyst_checks: 4, achievement_checks: 0, bonds_tree: 1, bond_slots: 0, shop: 1, events: 1, restock_minutes: 18, bond_nodes: 0, ion_levels: 0
+    catalyst_checks: 4, achievement_checks: 0, bonds_tree: 1, bond_slots: 0, shop: 1, events: 1, restock_minutes: 18, bond_nodes: 0, ion_levels: 0,
+    death_link: 0, deathlink_checks: 0
 };
 const apOpt = k => {
     const d = apState.slotData;
@@ -61,7 +68,7 @@ function apTally() {
 }
 const apCountId = id => apTally()[id] || 0;
 const apCount = name => apCountId(AP_ID[name]);
-// luck comes only from the flat luck boosts, and a Luck Trap halves it for a while
+// luck comes only from the flat luck boosts
 const apBoostLuck = () => Object.entries(AP_BOOST).reduce((s, [id, pct]) => s + apCountId(+id) * pct, 0);
 const apHasJokes = () => !!apOpt('joke_elements') && apCount('Joke Table Unlock') > 0;
 // traps: a list of {k, until}. Anything past its time is dropped as it is read
@@ -79,6 +86,11 @@ function apBondGrants() {
         Object.keys(by).forEach(id => {
             if (+id >= AP_BOND_ITEM && +id < AP_BOND_END) {
                 out.add(+id - AP_BOND_ITEM);
+            } else if (+id >= AP_BOND_GROUP_ITEM && +id < AP_BOND_GROUP_ITEM + 1000) {
+                const first = (+id - AP_BOND_GROUP_ITEM) * AP_BOND_GROUP;
+                for (let n = first; n < first + AP_BOND_GROUP; n++) {
+                    out.add(n);
+                }
             }
         });
         apTallyMemo.grants = out;

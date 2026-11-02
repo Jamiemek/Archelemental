@@ -288,6 +288,12 @@ function updateAutoBtn() {
         status = 'Locked';
         disabled = true;
         hint.textContent = 'Autoroll unlocks when you find ' + u[1] + ' (' + u[0] + ').';
+    } else if (apTrapOn('auto')) {
+        const t = apState.traps.find(x => x.k === 'auto');
+        label = 'Autoroll off · trap';
+        status = 'Off for a trap';
+        disabled = true;
+        hint.textContent = 'A Disable Autoroll Trap has switched autoroll off for ' + fmtDur(Math.ceil((t.until - Date.now()) / 1000)) + '. It comes back on by itself' + (autoWanted ? '.' : ' if you had it on.');
     } else {
         const onMenu = $('menu').classList.contains('active');
         hint.textContent = `Autoroll keeps rolling with a ${fmtGap(s.autoGap)} break between rolls${s.autoGap <= AUTO_MIN_GAP ? ' (its fastest)' : ''}. It keeps going on every screen except the main menu.`;
@@ -320,7 +326,7 @@ async function autoLoop() {
     }
     autoRolling = true;
     try {
-        while (autoWanted && activeBuffStats().autoUnlocked) {
+        while (autoWanted && activeBuffStats().autoUnlocked && !apTrapOn('auto')) {
             if ($('menu').classList.contains('active') || rolling || document.getElementById('dlg')) {
                 autoFrom = 0;
                 await new Promise(r => setTimeout(r, 250));
@@ -347,7 +353,7 @@ async function autoLoop() {
     }
 }
 $('autoRollBtn').addEventListener('click', () => {
-    if (!activeBuffStats().autoUnlocked) {
+    if (!activeBuffStats().autoUnlocked || apTrapOn('auto')) {
         return;
     }
     autoWanted = !autoWanted;

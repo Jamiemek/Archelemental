@@ -46,6 +46,10 @@ CATALYST_BASE = 3000
 ACHIEVEMENT_BASE = 4000
 ION_BASE = 6000
 BOND_BASE = 20000
+DEATHLINK_BASE = 40000
+
+# Bond Requirements come in groups of this many slots, counted out from the middle
+BOND_GROUP = 25
 
 # an ion tier is a sign and a size: +1, +2, +3, -1, -2, -3 (the game stops at 3)
 ION_TIERS = [(1, 1), (1, 2), (1, 3), (-1, 1), (-1, 2), (-1, 3)]
@@ -80,5 +84,15 @@ def bond_location(node):
     return f"Bond {node + 1}"
 
 
+def bond_group(node):
+    return node // BOND_GROUP
+
+
 def bond_item(node):
-    return f"Bond {node + 1} Requirements"
+    """The item that holds this slot's requirements, shared with the rest of its group"""
+    first = bond_group(node) * BOND_GROUP
+    return f"Bond Slots {first + 1}-{min(first + BOND_GROUP, BOND_NODES)} Requirements"
+
+
+def deathlink_location(i):
+    return f"Deathlink Check {i + 1}"

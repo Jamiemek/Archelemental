@@ -6,7 +6,7 @@ description: Archelemental Ion Frenzy, about 4 hours
 game: Archelemental
 Archelemental:
   # goal: how many of the 118 elements, joke elements and compound achievements you need to finish
-  elements_required: 85
+  elements_required: 83
   jokes_required: 0
   achievements_required: 0
   # game modes
@@ -44,7 +44,10 @@ Archelemental:
   bundles_1000: 100
   bundles_10000: 50
   bundles_100000: 10
-  # traps replace filler (0 turns them off)
-  roll_speed_traps: 0
-  luck_traps: 0
-  quark_drop_traps: 0
+  # traps replace filler (0 turns them off). Disable Autoroll and All Buffs Gone last 5 minutes; Drop All Quarks takes every quark you hold
+  disable_autoroll_traps: 0
+  drop_all_quarks_traps: 0
+  all_buffs_gone_traps: 0
+  # deathlink: adds 5% more checks that go off on random rolls and send a deathlink to everyone else who has it on.
+  # One sent to you sets off all three traps at once
+  death_link: false

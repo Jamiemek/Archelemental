@@ -49,12 +49,19 @@ function computeBuffs() {
             chainSteps += 1;
         }
     });
-    const bd = bondBonus();
+    let bd = bondBonus();
     const cb = catBonus();
+    let boosts = apBoostLuck();
+    let chainBoosts = apCount('Progressive Chain Boost');
+    // All Buffs Gone: the roll is back to how it started (catBonus sees the trap too)
+    if (apTrapOn('buffs')) {
+        luck = speed = extra = chainSteps = autoSpeed = boosts = chainBoosts = 0;
+        bd = Object.assign({}, bd, { scan: 0, auto: 0, extra: 0, chain: 0, quark: 0 });
+    }
     // each Chain Boost from the multiworld is one step better, like a Chain Primer that never runs out
-    const denom = Math.max(CHAIN_MAX, BASE_CHAIN - (BASE_CHAIN - CHAIN_MAX) / 8 * Math.min(8, chainSteps + bd.chain)) - apCount('Progressive Chain Boost');
+    const denom = Math.max(CHAIN_MAX, BASE_CHAIN - (BASE_CHAIN - CHAIN_MAX) / 8 * Math.min(8, chainSteps + bd.chain)) - chainBoosts;
     return {
-        found, luck: (luck + apBoostLuck()) * (apTrapOn('luck') ? 0.5 : 1) + cb.luck, speed: apTrapOn('speed') ? ((1 + (speed + cb.speed + bd.scan) / 100) * 0.5 - 1) * 100 : speed + cb.speed + bd.scan, autoUnlocked: apCount('Autoroll Unlock') > 0, autoSpeed: autoSpeed + bd.auto, autoGap: Math.max(AUTO_MIN_GAP, AUTO_BASE_GAP / (1 + (autoSpeed + bd.auto) / 100)), extra: Math.min(3, extra + bd.extra + cb.extra), chainSteps: Math.min(8, chainSteps), chainDenom: cb.chainMax ? CHAIN_MAX : Math.max(CHAIN_MAX, denom - cb.chain), fam: cb.fam, quark: cb.quark + bd.quark,
+        found, luck: luck + boosts + cb.luck, speed: speed + cb.speed + bd.scan, autoUnlocked: apCount('Autoroll Unlock') > 0, autoSpeed: autoSpeed + bd.auto, autoGap: Math.max(AUTO_MIN_GAP, AUTO_BASE_GAP / (1 + (autoSpeed + bd.auto) / 100)), extra: Math.min(3, extra + bd.extra + cb.extra), chainSteps: Math.min(8, chainSteps), chainDenom: cb.chainMax ? CHAIN_MAX : Math.max(CHAIN_MAX, denom - cb.chain), fam: cb.fam, quark: cb.quark + bd.quark,
         // reagent/punchline add, running gag multiplies
         jokeMult: (1 + cb.joke / 100) * (cb.gag || 1), level: cb.level, exp: catNextExpiry()
     };
@@ -152,7 +159,7 @@ function quarkMult(elements, buffs) {
     const cb = catBonus();
     const n = elements.length;
     const pct = (buffs.quark || 0) + (n === 1 ? bondBonus().alone : 0) + (n > 1 ? cb.lens : 0) + cb.heavy * (n - 1);
-    return (1 + pct / 100) * (cb.laugh && elements.some(e => isJoke(e[0])) ? 3 : 1) * (apTrapOn('quark') ? 0.5 : 1);
+    return (1 + pct / 100) * (cb.laugh && elements.some(e => isJoke(e[0])) ? 3 : 1);
 }
 // + Redactium
 const secretChance = () => SECRET_CHANCE + bondBonus().secret / 100;

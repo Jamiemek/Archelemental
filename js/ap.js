@@ -2,7 +2,9 @@
 const AP_GAME = 'Archelemental';
 const AP_VERSION = { major: 0, minor: 6, build: 7, class: 'Version' };
 // location ids, matching the APWorld
-const AP_LOC = { element: 1000, joke: 2000, catalyst: 3000, achievement: 4000, ion: 6000, bond: 20000 };
+const AP_LOC = { element: 1000, joke: 2000, catalyst: 3000, achievement: 4000, ion: 6000, bond: 20000, deathlink: 40000 };
+// each roll's chance of setting off the next deathlink check
+const AP_DEATHLINK_CHANCE = 1 / 400;
 const AP_ION_TIERS = ['+1', '+2', '+3', '-1', '-2', '-3'];
 const AP_CAT_ITEM = 100;
 const AP_SECRET = 6;
@@ -150,6 +152,10 @@ function apHandle(p) {
         if (p.players) {
             p.players.forEach(x => apPlayers[x.slot] = x.alias || x.name);
         }
+    } else if (p.cmd === 'Bounced') {
+        if ((p.tags || []).includes('DeathLink') && apOpt('death_link') && p.data && p.data.source !== apConn.name) {
+            apDeathlinkHit(p.data);
+        }
     } else if (p.cmd === 'PrintJSON') {
         apSay(apText(p.data), p.type === 'ItemSend' && p.receiving === apSlot ? 'got' : p.type || '');
     }
@@ -194,6 +200,13 @@ function apConnected(p) {
         apSay('This seed was made for a different version of the bonds tree (' + apOpt('bond_nodes') + ' slots, this game has ' + net().nodes.length + '). Download the matching APWorld from the game, or play on the version the seed was made for.', 'sys');
     }
     apApplyOptions();
+    if (apOpt('death_link')) {
+        apSend({ cmd: 'ConnectUpdate', tags: ['DeathLink'] });
+        // one set off while the connection was down still goes out
+        if (apState.deathlinkOwed) {
+            apDeathlinkSend();
+        }
+    }
     apSync();
 }
 // items: anything new is added to the list; the one-off kinds are used up as they arrive
@@ -235,6 +248,10 @@ function apItemName(it) {
     if (id >= AP_BOND_ITEM && id < AP_BOND_END) {
         return 'Bond ' + (id - AP_BOND_ITEM + 1) + ' Requirements';
     }
+    if (id >= AP_BOND_GROUP_ITEM && id < AP_BOND_GROUP_ITEM + 1000) {
+        const first = (id - AP_BOND_GROUP_ITEM) * AP_BOND_GROUP;
+        return 'Bond Slots ' + (first + 1) + '-' + Math.min(first + AP_BOND_GROUP, net().nodes.length) + ' Requirements';
+    }
     return (CATALYSTS[id - AP_CAT_ITEM] || {}).name || 'Something';
 }
 function apUse(it) {
@@ -244,8 +261,11 @@ function apUse(it) {
         return;
     }
     if (AP_TRAP[id]) {
-        apState.traps.push({ k: AP_TRAP[id], until: Date.now() + AP_TRAP_MS });
-        apTrapTick();
+        apTrap(AP_TRAP[id]);
+        return;
+    }
+    if (id === AP_QUARK_WIPE) {
+        addQuarks(-quarks);
         return;
     }
     const c = id >= AP_CAT_ITEM && id < 200 ? CATALYSTS[id - AP_CAT_ITEM] : null;
@@ -253,6 +273,17 @@ function apUse(it) {
         catInv[c.id] = (catInv[c.id] || 0) + 1;
         saveCats();
     }
+}
+// a second trap of the same kind adds its time on to the first, up to 15 minutes left
+function apTrap(kind) {
+    const now = Date.now();
+    const t = apState.traps.find(x => x.k === kind && x.until > now);
+    if (t) {
+        t.until = Math.min(t.until + AP_TRAP_MS, now + 3 * AP_TRAP_MS);
+    } else {
+        apState.traps.push({ k: kind, until: now + AP_TRAP_MS });
+    }
+    apTrapTick();
 }
 // traps wear off by themselves: when one ends, everything that depended on it is worked out again
 let apTrapTimer = null;
@@ -265,9 +296,40 @@ function apTrapTick() {
     if (typeof renderRollStats === 'function' && $('homeMap')) {
         renderRollStats();
     }
+    // autoroll picks up again once a Disable Autoroll Trap is over
+    if (typeof autoLoop === 'function' && autoWanted && !apTrapOn('auto')) {
+        autoLoop();
+    }
     if (apState.traps.length) {
         apTrapTimer = setTimeout(apTrapTick, Math.max(500, Math.min(...apState.traps.map(t => t.until)) - now + 50));
     }
+}
+// deathlink: someone else's sets off all three traps at once
+function apDeathlinkHit(data) {
+    apTrap('auto');
+    apTrap('buffs');
+    addQuarks(-quarks);
+    refreshAfterItems();
+    const who = data.source || 'Someone';
+    apSay(who + ' sent a deathlink' + (data.cause ? ' (' + data.cause + ')' : '') + ': autoroll off and all buffs gone for 5 minutes, and your quarks are gone.', 'sys');
+    const el = $('apToast');
+    if (el) {
+        el.innerHTML = '<small>Deathlink</small><strong>' + esc(who) + '</strong>';
+        el.classList.add('show');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 4000);
+    }
+}
+function apDeathlinkSend() {
+    if (apStatus !== 'connected') {
+        apState.deathlinkOwed = true;
+        apSaveState();
+        return;
+    }
+    apState.deathlinkOwed = false;
+    apSaveState();
+    apSend({ cmd: 'Bounce', tags: ['DeathLink'], data: { time: Date.now() / 1000, source: apConn.name, cause: apConn.name + ' set off a deathlink check' } });
+    apSay('You set off a deathlink check. Everyone with deathlink on has been hit.', 'sys');
 }
 function refreshAfterItems() {
     refreshViews();
@@ -355,6 +417,9 @@ function apChecksDone() {
             });
         });
     }
+    for (let i = 0; i < Math.min(apState.deathlinks, apOpt('deathlink_checks')); i++) {
+        out.push(AP_LOC.deathlink + i + 1);
+    }
     if (apOpt('bonds_tree')) {
         const checks = apBondChecks();
         Object.keys(netState).forEach(id => {
@@ -424,8 +489,13 @@ function apSync() {
         apRenderGoal();
     }
 }
-// called by the game
+// called by the game after every roll
 function apFound() {
+    if (apOpt('death_link') && apState.deathlinks < apOpt('deathlink_checks') && rnd() < AP_DEATHLINK_CHANCE) {
+        apState.deathlinks++;
+        apSaveState();
+        apDeathlinkSend();
+    }
     apSync();
 }
 function apCatalyst(id) {
@@ -465,7 +535,14 @@ function apRenderGoal() {
         rows.push(['Achievements', achDone + ' / ' + apOpt('achievements_required') + ' needed']);
     }
     rows.push(['Checks done', apState.checked.length.toLocaleString('en-US')]);
-    rows.push(['Luck', '+' + apBoostLuck() + '% from luck boosts' + (apTrapOn('luck') ? ' (halved by a trap)' : '')]);
+    rows.push(['Luck', '+' + apBoostLuck() + '% from luck boosts']);
+    const traps = apState.traps.filter(t => t.until > Date.now()).map(t => ({ auto: 'Autoroll off', buffs: 'All buffs gone' })[t.k] + ' for ' + fmtDur(Math.ceil((t.until - Date.now()) / 1000)));
+    if (traps.length) {
+        rows.push(['Traps', traps.join(', ')]);
+    }
+    if (apOpt('death_link')) {
+        rows.push(['Deathlink checks', apState.deathlinks + ' / ' + apOpt('deathlink_checks') + ' set off']);
+    }
     if (apOpt('bonds_tree')) {
         rows.push(['Bond requirements', apBondGrants().size.toLocaleString('en-US') + ' received']);
     }

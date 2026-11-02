@@ -1,4 +1,5 @@
-// Prints the bonds tree's shape (how many slots there are and which ones touch) as JSON.
+// Prints the bonds tree's shape (how many slots there are and which ones touch) as JSON, along with every element's
+// odds as the game uses them (data.js reshapes the listed odds when it loads).
 // It runs the game's own generator, so the APWorld's copy of the tree can never drift from the game's.
 //   node tools/bondgraph.js
 const fs = require('fs');
@@ -30,9 +31,9 @@ const src = [
     between(read('js/roll.js'), 'function parseFormula', 'ACHIEVEMENTS.forEach(a => a.hill'),
     'function findFormula() { return null; }\nconst apOpt = () => 1;\n',
     bonds.slice(0, bonds.indexOf('function net()')),
-    'this.__N = genNetwork();'
+    'this.__N = genNetwork();\nthis.__ODDS = Object.fromEntries(ELEMENTS.map(e => [e[0], e[2]]));'
 ].join('\n');
 vm.runInContext(src, sandbox);
 const N = sandbox.__N;
-const out = { nodes: N.nodes.length, inner: N.base, edges: N.edges.map(e => [e.a, e.b]) };
+const out = { nodes: N.nodes.length, inner: N.base, edges: N.edges.map(e => [e.a, e.b]), odds: sandbox.__ODDS };
 process.stdout.write(JSON.stringify(out));
