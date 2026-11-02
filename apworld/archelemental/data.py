@@ -21,10 +21,10 @@ for _a, _b in BOND_EDGES:
 
 
 def bond_checks(count):
-    """The slots that are checks when the first `count` count, and each one's way in from the middle: the shortest
-    path that stays inside them. Slot numbers go outwards ring by ring, but a few cut-offs in the first outer ring
-    leave a slot that can only be reached through a later one, so those are left out. The tree has loops, which only
-    ever give more ways in, so logic that follows one path is never too generous."""
+    """Which slots are checks with bond_slots set to `count`, and each one's way in from the middle (the shortest
+    path that stays among them). Slots go outwards ring by ring, but a few cut-offs in the first outer ring leave
+    a slot only reachable through a later one, so those are dropped. The tree has loops, which only ever give
+    more ways in, so logic that follows one path is never too generous."""
     parent = {0: None}
     queue = [0]
     for n in queue:
