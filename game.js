@@ -1352,9 +1352,35 @@ function setMsg(id, text, bad) {
     }
 }
 // Archipelago: this save's options and the items received so far. Loaded early, as the rest of the game asks for them while it starts
-const AP_ITEM = { 1: 'Progressive Luck', 2: 'Joke Table', 3: 'Autoroll', 4: 'Chain Boost', 5: 'Extra Roll', 6: 'Shop Slot', 7: 'Quark Bundle' };
+const AP_ITEM = {
+    1: 'Progressive Bonus Roll', 2: 'Progressive Shop Luck', 3: 'Progressive Shop Reset Speed', 4: 'Progressive Shop Slot',
+    5: 'Catalyst Rolling Unlock', 6: 'Shop Hold Unlock', 7: 'Luck Boost 15%', 8: 'Luck Boost 30%', 9: 'Luck Boost 60%', 10: 'Luck Boost 90%',
+    11: 'Progressive Autoroll Speed', 12: 'Progressive Scanner Speed', 13: 'Progressive Event Spawn Chance', 14: 'Progressive Quark Gain',
+    15: 'Autoroll Unlock', 16: 'Progressive Chain Boost', 17: 'Joke Table Unlock', 18: 'Ionization Unlock',
+    19: 'Progressive + Ion Chance', 20: 'Progressive - Ion Chance',
+    21: 'Quark Bundle 100', 22: 'Quark Bundle 1000', 23: 'Quark Bundle 10000', 24: 'Quark Bundle 100000',
+    25: 'Roll Speed Trap', 26: 'Luck Trap', 27: 'Quark Drop Trap'
+};
+const AP_ID = Object.fromEntries(Object.entries(AP_ITEM).map(([k, v]) => [v, +k]));
+const AP_BOOST = { 7: 15, 8: 30, 9: 60, 10: 90 };
+const AP_BUNDLE = { 21: 100, 22: 1000, 23: 10000, 24: 100000 };
+const AP_TRAP = { 25: 'speed', 26: 'luck', 27: 'quark' };
+// cosmetics are items 40 and up, in this order (the same as the APWorld's list)
+const AP_COS_BASE = 40;
+const AP_COS = ['oscilloscope', 'holographic', 'blueprint', 'notebook', 'retro', 'astral', 'warp', 'gameover'];
+// Element Frenzy: elements are items 5000 + atomic number. Bond requirements are items 10000 + slot
+const AP_ELEMENT_BASE = 5000;
+const AP_BOND_ITEM = 10000;
+const AP_BOND_END = 20000;
+const AP_STEP = {
+    shopLuckStock: 7.5, shopLuckPrice: 3.75, reset: 1, slot: 1, autoroll: 100, scanner: 25, event: 12.5, quark: 12.5,
+    ionPlus: 0.01, ionMinus: 0.002
+};
+const AP_TRAP_MS = 5 * 60000;
 // what this save knows: the seed's options, every item received so far, and how many of the one-off items have been used
-let apState = loadJSON('apState', { slotData: null, items: [], spent: 0, catSeen: [], goal: false, checked: [] });
+let apState = loadJSON('apState', { slotData: null, items: [], spent: 0, catSeen: [], goal: false, checked: [], ions: {}, traps: [] });
+apState.ions = apState.ions || {};
+apState.traps = apState.traps || [];
 const apSaveState = () => {
     try {
         localStorage.setItem('apState', JSON.stringify(apState));
@@ -1369,15 +1395,64 @@ const apSaveId = () => {
     }
 };
 // options default to everything on until a seed says otherwise
-const AP_DEFAULTS = { elements_required: 118, jokes_required: 0, joke_elements: 1, catalyst_checks: 4, achievement_checks: 0, bonds_tree: 1, shop: 1, events: 1, luck_items: 15, luck_per_item: 100, restock_minutes: 10 };
+const AP_DEFAULTS = {
+    elements_required: 118, jokes_required: 0, achievements_required: 0, element_frenzy: 0, ionization_frenzy: 0, joke_elements: 1,
+    catalyst_checks: 4, achievement_checks: 0, bonds_tree: 1, shop: 1, events: 1, restock_minutes: 18, bond_nodes: 0, ion_levels: 0
+};
 const apOpt = k => {
     const d = apState.slotData;
     return d && d[k] != null ? d[k] : AP_DEFAULTS[k];
 };
-const apCount = name => apState.items.filter(i => AP_ITEM[i.item] === name).length;
-const apLuck = () => apCount('Progressive Luck') * apOpt('luck_per_item');
-const apHasJokes = () => !!apOpt('joke_elements') && apCount('Joke Table') > 0;
-
+let apTallyMemo = null;
+function apTally() {
+    if (!apTallyMemo || apTallyMemo.n !== apState.items.length || apTallyMemo.ref !== apState.items) {
+        const by = {};
+        apState.items.forEach(i => by[i.item] = (by[i.item] || 0) + 1);
+        apTallyMemo = { n: apState.items.length, ref: apState.items, by };
+    }
+    return apTallyMemo.by;
+}
+const apCountId = id => apTally()[id] || 0;
+const apCount = name => apCountId(AP_ID[name]);
+// luck comes only from the flat luck boosts, and a Luck Trap halves it for a while
+const apBoostLuck = () => Object.entries(AP_BOOST).reduce((s, [id, pct]) => s + apCountId(+id) * pct, 0);
+const apHasJokes = () => !!apOpt('joke_elements') && apCount('Joke Table Unlock') > 0;
+// traps: a list of {k, until}. Anything past its time is dropped as it is read
+function apTrapOn(kind) {
+    const now = Date.now();
+    if (apState.traps.some(t => t.until <= now)) {
+        apState.traps = apState.traps.filter(t => t.until > now);
+    }
+    return apState.traps.some(t => t.k === kind);
+}
+function apBondGrants() {
+    const by = apTally();
+    if (!apTallyMemo.grants) {
+        const out = new Set();
+        Object.keys(by).forEach(id => {
+            if (+id >= AP_BOND_ITEM && +id < AP_BOND_END) {
+                out.add(+id - AP_BOND_ITEM);
+            }
+        });
+        apTallyMemo.grants = out;
+    }
+    return apTallyMemo.grants;
+}
+function apElementItems() {
+    const by = apTally();
+    if (!apTallyMemo.els) {
+        const out = new Set();
+        Object.keys(by).forEach(id => {
+            const z = +id - AP_ELEMENT_BASE;
+            if (z >= 1 && z <= 118 && ELEMENTS[z - 1]) {
+                out.add(ELEMENTS[z - 1][0]);
+            }
+        });
+        apTallyMemo.els = out;
+    }
+    return apTallyMemo.els;
+}
+const apCosItems = () => AP_COS.filter((c, i) => apCountId(AP_COS_BASE + i) > 0);
 const RARITY_FX = [
     null,
     { c: '#7cc8ff', c2: '#2f6bff', ms: 1800 },
@@ -6235,7 +6310,8 @@ function buildBuffs() {
 const ELEMENT_BUFFS = buildBuffs();
 // jokes don't count. only rebuilt when a new formula turns up
 let foundCache = null;
-function discoveredSymbols() {
+// what has been rolled, whatever Archipelago has handed over: this is what the checks are
+function rolledSymbols() {
     if (foundCache && foundCache.col === collection && foundCache.n === collection.length) {
         return foundCache.set;
     }
@@ -6244,6 +6320,10 @@ function discoveredSymbols() {
     JOKE_SYMS.forEach(s => set.delete(s));
     foundCache = { col: collection, n: collection.length, set };
     return set;
+}
+// what shows as found. With Element Frenzy that is only what the multiworld has sent, not what you rolled
+function discoveredSymbols() {
+    return apOpt('element_frenzy') ? apElementItems() : rolledSymbols();
 }
 let jokeFoundCache = null;
 function jokesFound() {
@@ -6638,17 +6718,9 @@ function shownNet() {
 }
 const NET_BIG = new Set(['mult', 'slot', 'chain', 'ion', 'hold', 'cos', 'drop']);
 const edgeLit = e => netFilled(e.a) && netFilled(e.b);
+// the lines used to be buffs; with Archipelago every slot is a check and the buffs come from items instead
 function edgeDesc(e) {
-    const v = e.val;
-    if (e.orbit != null && NET_BIG.has(e.kind) && !edgeLit(e)) {
-        return '???';
-    }
-    const outer = {
-        quark: `+${v}% quarks`, event: `+${v}% event chance`, cdur: `+${v}% catalyst time`, dup: `+${v}% duplicate catalysts`,
-        refund: `+${v}% catalyst refunds`, storm: `+${v}% Quark Storm size`, hold: 'Shop hold', drop: 'Catalyst drops (1 in 500 presses of Roll)',
-        ion: 'Unlocks ionisation', cos: 'Unlocks ' + COSMETIC_NAMES[v]
-    };
-    return outer[e.kind] || (e.kind === 'luck' ? `+${v}% luck` : e.kind === 'mult' ? `×${v} luck` : e.kind === 'auto' ? `+${v}% autoroll speed` : e.kind === 'chain' ? 'Chain chance +1 step' : e.kind === 'extra' ? '+1 bonus roll' : e.kind === 'price' ? `−${v}% shop prices` : e.kind === 'refresh' ? `−${v} min shop restock` : e.kind === 'stock' ? `+${v}% rarer shop stock` : '+1 shop stock slot');
+    return '';
 }
 function reqShort(q) {
     if (q.t === 'el') {
@@ -6732,7 +6804,8 @@ const netReachable = id => id === 0 || net().adj[id].some(i => {
     const e = net().edges[i];
     return netFilled(e.a === id ? e.b : e.a);
 });
-const netFillable = id => !netFilled(id) && netReachable(id) && canPay(net().nodes[id].req);
+const netGranted = id => apBondGrants().has(id);
+const netFillable = id => !netFilled(id) && netReachable(id) && (netGranted(id) || canPay(net().nodes[id].req));
 // every slot you could fill right now, worked out once per change
 let fillMemo = null;
 function fillableIds() {
@@ -6748,9 +6821,12 @@ function fillSlot(id) {
     if (!netFillable(id)) {
         return false;
     }
-    const plan = payPlan(n.req);
-    plan.forEach(p => p.c.spent = (p.c.spent || 0) + p.take);
-    save();
+    // the item's requirements are used first, so what you rolled stays yours
+    if (!netGranted(id)) {
+        const plan = payPlan(n.req);
+        plan.forEach(p => p.c.spent = (p.c.spent || 0) + p.take);
+        save();
+    }
     fillFree(id);
     return true;
 }
@@ -6758,6 +6834,7 @@ function fillFree(id) {
     netState[id] = 1;
     saveNet();
     netVer++;
+    apSync();
     buffCache = weightCache = null;
     setTimeout(jokeIntroCheck, 600);
     applyCosmetics();
@@ -6784,8 +6861,8 @@ function pityPrice(n) {
     pityMemo.price.set(key, price);
     return price;
 }
-const pityReady = n => n.orbit != null && !netFilled(n.id) && netReachable(n.id) && !canPay(n.req) && pityOn() && quarks >= pityPrice(n);
-const agentReady = n => catInv.bondagent > 0 && !netFilled(n.id) && netReachable(n.id) && !canPay(n.req);
+const pityReady = n => n.orbit != null && !netFilled(n.id) && netReachable(n.id) && !netGranted(n.id) && !canPay(n.req) && pityOn() && quarks >= pityPrice(n);
+const agentReady = n => catInv.bondagent > 0 && !netFilled(n.id) && netReachable(n.id) && !netGranted(n.id) && !canPay(n.req);
 function useAgent(n) {
     catInv.bondagent--;
     if (!catInv.bondagent) {
@@ -6833,34 +6910,16 @@ function netBonus() {
     if (netCache && netCache.v === netVer) {
         return netCache.r;
     }
+    const n = name => apCount(name);
+    const shopLuck = n('Progressive Shop Luck');
     const r = {
-        add: 0, mult: 1, auto: 0, price: 0, refresh: 0, stock: 0, slots: 0, chain: 0, extra: 0,
-        quark: 0, event: 0, cdur: 0, dup: 0, refund: 0, storm: 0, hold: false, ion: false, cos: [],
-        away: 0, evlen: 0, alone: 0, secret: 0, jokerate: 0, drop: 0
+        add: 0, mult: 1, auto: n('Progressive Autoroll Speed') * AP_STEP.autoroll, scan: n('Progressive Scanner Speed') * AP_STEP.scanner,
+        price: shopLuck * AP_STEP.shopLuckPrice, refresh: n('Progressive Shop Reset Speed') * AP_STEP.reset, stock: shopLuck * AP_STEP.shopLuckStock,
+        slots: n('Progressive Shop Slot') * AP_STEP.slot, chain: 0, extra: n('Progressive Bonus Roll'),
+        quark: n('Progressive Quark Gain') * AP_STEP.quark, event: apOpt('events') ? n('Progressive Event Spawn Chance') * AP_STEP.event : 0,
+        cdur: 0, dup: 0, refund: 0, storm: 0, hold: n('Shop Hold Unlock') > 0, ion: n('Ionization Unlock') > 0, cos: apCosItems(),
+        away: 0, evlen: 0, alone: 0, secret: 0, jokerate: 0, drop: n('Catalyst Rolling Unlock') > 0 ? 0.2 : 0
     };
-    // with the bonds tree switched off in the YAML, it gives nothing
-    (apOpt('bonds_tree') ? net().edges : []).forEach(e => {
-        if (!edgeLit(e)) {
-            return;
-        }
-        if (e.kind === 'luck') {
-            r.add += e.val;
-        } else if (e.kind === 'mult') {
-            r.mult *= e.val;
-        } else if (e.kind === 'slot') {
-            r.slots += 1;
-        } else if (e.kind === 'cos') {
-            r.cos.push(e.val);
-        } else if (typeof r[e.kind] === 'boolean') {
-            r[e.kind] = true;
-        } else {
-            r[e.kind] += e.val;
-        }
-    });
-    // the oscilloscope comes with the first slot filled on outer ring 1
-    if (apOpt('bonds_tree') && net().nodes.some(n => n.orbit === 0 && netFilled(n.id))) {
-        r.cos.push('oscilloscope');
-    }
     netCache = { v: netVer, r };
     return r;
 }
@@ -6874,9 +6933,7 @@ function bondBonus() {
     const r = Object.assign({}, n, { cos: n.cos.slice() });
     found.forEach(s => {
         const [k, v] = JOKE_BONUS[s];
-        if (k === 'cos') {
-            r.cos.push(v);
-        } else {
+        if (k !== 'cos') {
             r[k] += v;
         }
     });
@@ -7040,6 +7097,9 @@ function netDraw() {
         g.textBaseline = 'middle';
         labels.forEach(([mx, my, e, on]) => {
             const txt = edgeDesc(e);
+            if (!txt) {
+                return;
+            }
             const w = g.measureText(txt).width + 10;
             g.fillStyle = 'rgba(10,16,14,.85)';
             g.fillRect(mx - w / 2, my - 9 * k, w, 18 * k);
@@ -7063,7 +7123,7 @@ function netDraw() {
                 return;
             }
             const filled = netFilled(n.id);
-            const avail = !filled && netReachable(n.id) && canPay(n.req);
+            const avail = !filled && netReachable(n.id) && (netGranted(n.id) || canPay(n.req));
             anyAvail = anyAvail || avail;
             const key = filled ? ringCol(n.ring) : 'rgba(232,239,233,.35)';
             if (!groups.has(key)) {
@@ -7097,7 +7157,7 @@ function netDraw() {
             }
             const filled = netFilled(n.id);
             const reach = netReachable(n.id);
-            const avail = !filled && reach && canPay(n.req);
+            const avail = !filled && reach && (netGranted(n.id) || canPay(n.req));
             const pity = !avail && (agentReady(n) || pityReady(n));
             const col = ringCol(n.ring);
             anyAvail = anyAvail || avail || pity;
@@ -7307,25 +7367,16 @@ function netJump() {
     }
 }
 function netTotalsHtml() {
-    const b = netBonus();
-    const rows = [['Luck', '+' + b.add.toFixed(2) + '%'], ['Luck multiplier', '×' + b.mult.toFixed(3)], ['Autoroll speed', '+' + b.auto.toFixed(1) + '%'], ['Shop prices', '−' + b.price.toFixed(2) + '%'], ['Shop restock', '−' + b.refresh.toFixed(2) + ' min'], ['Rarer shop stock', '+' + b.stock.toFixed(2) + '%'], ['Shop stock slots', '+' + b.slots], ['Bonus rolls', '+' + b.extra], ['Chain steps', '+' + b.chain]];
-    [['Quarks per roll', b.quark, '%'], ['Event chance', b.event, '%'], ['Catalyst duration', b.cdur, '%'], ['Duplicate catalysts', b.dup, '% chance'],
-        ['Single-roll catalysts kept', b.refund, '% chance'], ['Bigger Quark Storms', b.storm, '%']].forEach(([k, v, u]) => {
-        if (v) {
-            rows.push([k, '+' + v.toFixed(2) + u]);
+    const total = net().nodes.length;
+    const taken = Object.keys(netState).length;
+    const grants = apBondGrants();
+    let waiting = 0;
+    grants.forEach(id => {
+        if (!netFilled(id)) {
+            waiting++;
         }
     });
-    [['Shop hold', b.hold], ['Ionisation', b.ion], ['Joke periodic table', jokesOn()]].forEach(([k, on]) => {
-        if (on) {
-            rows.push([k, 'Unlocked']);
-        }
-    });
-    if (b.cos.length) {
-        rows.push(['Cosmetics unlocked', b.cos.length]);
-    }
-    if (b.drop) {
-        rows.push(['Catalyst drops', '1 in ' + Math.round(100 / b.drop) + ' presses']);
-    }
+    const rows = [['Slots taken', taken.toLocaleString('en-US') + ' / ' + total.toLocaleString('en-US')], ['Requirements received', grants.size.toLocaleString('en-US')], ['Received, not taken yet', waiting.toLocaleString('en-US')]];
     return rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 }
 // tapping a slot fills it straight away when you can; otherwise the slot flashes red
@@ -7892,12 +7943,12 @@ function clearCatalyst(tier) {
     buffCache = weightCache = null;
 }
 // the shop
-// the YAML sets the restock time; bonds can still shave minutes off it
+// the YAML sets the restock time; Progressive Shop Reset Speed shaves minutes off it
 function shopPeriodMs() {
     return Math.max(2, apOpt('restock_minutes') - bondBonus().refresh) * 60000;
 }
-// 2 + bonds + Shop Slots from the multiworld, max 6
-const shopSlots = () => Math.min(6, 2 + bondBonus().slots + apCount('Shop Slot'));
+// 2 + Progressive Shop Slots from the multiworld, max 7
+const shopSlots = () => Math.min(7, 2 + bondBonus().slots);
 function shopPrice(c, grant = true) {
     return Math.max(1, Math.round(c.price * (1 - Math.min(90, bondBonus().price) / 100) * (grant && catFlags.grant ? 0.5 : 1)));
 }
@@ -8296,9 +8347,9 @@ function computeBuffs() {
     const bd = bondBonus();
     const cb = catBonus();
     // each Chain Boost from the multiworld is one step better, like a Chain Primer that never runs out
-    const denom = Math.max(CHAIN_MAX, BASE_CHAIN - (BASE_CHAIN - CHAIN_MAX) / 8 * Math.min(8, chainSteps + bd.chain)) - apCount('Chain Boost');
+    const denom = Math.max(CHAIN_MAX, BASE_CHAIN - (BASE_CHAIN - CHAIN_MAX) / 8 * Math.min(8, chainSteps + bd.chain)) - apCount('Progressive Chain Boost');
     return {
-        found, luck: (luck + bd.add + apLuck()) * bd.mult + cb.luck, speed: speed + cb.speed, autoUnlocked: autoUnlock || apCount('Autoroll') > 0, autoSpeed: autoSpeed + bd.auto, autoGap: Math.max(AUTO_MIN_GAP, AUTO_BASE_GAP / (1 + (autoSpeed + bd.auto) / 100)), extra: Math.min(3, extra + bd.extra + cb.extra + apCount('Extra Roll')), chainSteps: Math.min(8, chainSteps), chainDenom: cb.chainMax ? CHAIN_MAX : Math.max(CHAIN_MAX, denom - cb.chain), fam: cb.fam, quark: cb.quark + bd.quark,
+        found, luck: (luck + apBoostLuck()) * (apTrapOn('luck') ? 0.5 : 1) + cb.luck, speed: apTrapOn('speed') ? ((1 + (speed + cb.speed + bd.scan) / 100) * 0.5 - 1) * 100 : speed + cb.speed + bd.scan, autoUnlocked: apCount('Autoroll Unlock') > 0, autoSpeed: autoSpeed + bd.auto, autoGap: Math.max(AUTO_MIN_GAP, AUTO_BASE_GAP / (1 + (autoSpeed + bd.auto) / 100)), extra: Math.min(3, extra + bd.extra + cb.extra), chainSteps: Math.min(8, chainSteps), chainDenom: cb.chainMax ? CHAIN_MAX : Math.max(CHAIN_MAX, denom - cb.chain), fam: cb.fam, quark: cb.quark + bd.quark,
         // reagent/punchline add, running gag multiplies
         jokeMult: (1 + cb.joke / 100) * (cb.gag || 1), level: cb.level, exp: catNextExpiry()
     };
@@ -8396,7 +8447,7 @@ function quarkMult(elements, buffs) {
     const cb = catBonus();
     const n = elements.length;
     const pct = (buffs.quark || 0) + (n === 1 ? bondBonus().alone : 0) + (n > 1 ? cb.lens : 0) + cb.heavy * (n - 1);
-    return (1 + pct / 100) * (cb.laugh && elements.some(e => isJoke(e[0])) ? 3 : 1);
+    return (1 + pct / 100) * (cb.laugh && elements.some(e => isJoke(e[0])) ? 3 : 1) * (apTrapOn('quark') ? 0.5 : 1);
 }
 // + Redactium
 const secretChance = () => SECRET_CHANCE + bondBonus().secret / 100;
@@ -8434,16 +8485,20 @@ function exactRarity(elements, guaranteedExtras = 0) {
 const ION_PLUS = 0.01;
 const ION_MINUS = 0.001;
 const ION_MAX = 3;
+const ionPlusChance = () => ION_PLUS + apCount('Progressive + Ion Chance') * AP_STEP.ionPlus;
+const ionMinusChance = () => ION_MINUS + apCount('Progressive - Ion Chance') * AP_STEP.ionMinus;
 function rollIon() {
     if (!bondBonus().ion) {
         return 0;
     }
-    const plus = rnd() < ION_PLUS;
-    const minus = rnd() < ION_MINUS;
+    const plusP = ionPlusChance();
+    const minusP = ionMinusChance();
+    const plus = rnd() < plusP;
+    const minus = rnd() < minusP;
     if (!plus && !minus) {
         return 0;
     }
-    const p = minus ? ION_MINUS : ION_PLUS;
+    const p = minus ? minusP : plusP;
     let n = 1;
     while (n < ION_MAX && rnd() < p) {
         n++;
@@ -8483,6 +8538,7 @@ function ionCredit(sym, ion) {
     if (!ion) {
         return;
     }
+    apIon(sym, ion);
     const m = ionMarks[sym] || [0, 0];
     const k = ion > 0 ? 0 : 1;
     if (Math.abs(ion) > m[k]) {
@@ -9061,7 +9117,7 @@ async function doRoll(preset, opts) {
                 let luckUp = ch.rollLuck;
                 let first = null;
                 if (ch.unfound) {
-                    const found = discoveredSymbols();
+                    const found = rolledSymbols();
                     if (ELEMENTS.some(e => !found.has(e[0]))) {
                         first = weightedElement(luckUp, e => !found.has(e[0]));
                     } else {
@@ -9743,7 +9799,7 @@ function cosSave() {
     } catch (e) { }
 }
 const cosUnlocked = id => bondBonus().cos.includes(id);
-const cosOwned = id => cosUnlocked(id) && (!!COS[id].free || cosState.owned.includes(id));
+const cosOwned = id => cosUnlocked(id);
 const hasFinalBadge = () => cosUnlocked('gameover');
 const effectSkin = () => cosState.effects && cosOwned(cosState.effects) ? cosState.effects : '';
 const scannerSkin = () => cosState.scanner && cosOwned(cosState.scanner) ? cosState.scanner : '';
@@ -13348,7 +13404,8 @@ async function viewerPlay(btn) {
 const AP_GAME = 'Archelemental';
 const AP_VERSION = { major: 0, minor: 6, build: 7, class: 'Version' };
 // location ids, matching the APWorld
-const AP_LOC = { element: 1000, joke: 2000, catalyst: 3000, achievement: 4000 };
+const AP_LOC = { element: 1000, joke: 2000, catalyst: 3000, achievement: 4000, ion: 6000, bond: 20000 };
+const AP_ION_TIERS = ['+1', '+2', '+3', '-1', '-2', '-3'];
 const AP_CAT_ITEM = 100;
 const AP_SECRET = 6;
 // the connection
@@ -13534,6 +13591,10 @@ function apConnected(p) {
     buffCache = weightCache = null;
     apSetStatus('connected');
     apSay('Connected as ' + apConn.name + '.', 'sys');
+    // the seed was made from a tree of a certain size: a different one would send the wrong slots
+    if (apOpt('bonds_tree') && apOpt('bond_nodes') && apOpt('bond_nodes') !== net().nodes.length) {
+        apSay('This seed was made for a different version of the bonds tree (' + apOpt('bond_nodes') + ' slots, this game has ' + net().nodes.length + '). Download the matching APWorld from the game, or play on the version the seed was made for.', 'sys');
+    }
     apApplyOptions();
     apSync();
 }
@@ -13556,31 +13617,71 @@ function apReceived(index, items) {
     apSaveState();
     buffCache = weightCache = null;
     netCache = bondCache = null;
+    netVer++;
     if (fresh.length) {
         apToast(fresh);
         refreshAfterItems();
     }
 }
 function apItemName(it) {
-    return AP_ITEM[it.item] || (CATALYSTS[it.item - AP_CAT_ITEM] || {}).name || 'Something';
+    const id = it.item;
+    if (AP_ITEM[id]) {
+        return AP_ITEM[id];
+    }
+    if (id >= AP_COS_BASE && id < AP_COS_BASE + AP_COS.length) {
+        return COS[AP_COS[id - AP_COS_BASE]].name;
+    }
+    if (id > AP_ELEMENT_BASE && id <= AP_ELEMENT_BASE + 118) {
+        return 'Element: ' + ELEMENTS[id - AP_ELEMENT_BASE - 1][1];
+    }
+    if (id >= AP_BOND_ITEM && id < AP_BOND_END) {
+        return 'Bond ' + (id - AP_BOND_ITEM + 1) + ' Requirements';
+    }
+    return (CATALYSTS[id - AP_CAT_ITEM] || {}).name || 'Something';
 }
 function apUse(it) {
-    const name = AP_ITEM[it.item];
-    if (name === 'Quark Bundle') {
-        // worth more the further along you are: a few common catalysts at the start, a legendary near the end
-        addQuarks(Math.round(300 * Math.pow(1 + apLuck() / 100, 1.5)));
+    const id = it.item;
+    if (AP_BUNDLE[id]) {
+        addQuarks(AP_BUNDLE[id]);
         return;
     }
-    const c = CATALYSTS[it.item - AP_CAT_ITEM];
-    if (!name && c) {
+    if (AP_TRAP[id]) {
+        apState.traps.push({ k: AP_TRAP[id], until: Date.now() + AP_TRAP_MS });
+        apTrapTick();
+        return;
+    }
+    const c = id >= AP_CAT_ITEM && id < 200 ? CATALYSTS[id - AP_CAT_ITEM] : null;
+    if (c) {
         catInv[c.id] = (catInv[c.id] || 0) + 1;
         saveCats();
     }
 }
+// traps wear off by themselves: when one ends, everything that depended on it is worked out again
+let apTrapTimer = null;
+function apTrapTick() {
+    clearTimeout(apTrapTimer);
+    const now = Date.now();
+    apState.traps = apState.traps.filter(t => t.until > now);
+    buffCache = weightCache = null;
+    apSaveState();
+    if (typeof renderRollStats === 'function' && $('homeMap')) {
+        renderRollStats();
+    }
+    if (apState.traps.length) {
+        apTrapTimer = setTimeout(apTrapTick, Math.max(500, Math.min(...apState.traps.map(t => t.until)) - now + 50));
+    }
+}
 function refreshAfterItems() {
+    refreshViews();
     renderRollStats();
+    renderHome();
     renderCatInv();
     renderShop();
+    applyCosmetics();
+    if ($('bonds').classList.contains('active')) {
+        $('netTotals').innerHTML = netTotalsHtml();
+        netDrawSoon();
+    }
     if (jokesOn()) {
         jokeIntroCheck();
     }
@@ -13618,7 +13719,8 @@ function apText(parts) {
 // checks: worked out from the save itself, so nothing is lost if the game was played offline
 function apChecksDone() {
     const out = [];
-    const found = discoveredSymbols();
+    // what you rolled, not what you were sent: with Element Frenzy those differ
+    const found = rolledSymbols();
     ELEMENTS.forEach((e, i) => {
         if (found.has(e[0])) {
             out.push(AP_LOC.element + i + 1);
@@ -13645,7 +13747,32 @@ function apChecksDone() {
             }
         });
     }
+    if (apOpt('ionization_frenzy')) {
+        ELEMENTS.forEach((e, i) => {
+            (apState.ions[e[0]] || []).forEach(code => {
+                const t = AP_ION_TIERS.indexOf(code);
+                if (t >= 0) {
+                    out.push(AP_LOC.ion + i * AP_ION_TIERS.length + t + 1);
+                }
+            });
+        });
+    }
+    if (apOpt('bonds_tree')) {
+        Object.keys(netState).forEach(id => {
+            if (netState[id]) {
+                out.push(AP_LOC.bond + (+id));
+            }
+        });
+    }
     return out;
+}
+function apIon(sym, ion) {
+    const code = (ion > 0 ? '+' : '-') + Math.abs(ion);
+    const list = apState.ions[sym] || (apState.ions[sym] = []);
+    if (!list.includes(code)) {
+        list.push(code);
+        apSaveState();
+    }
 }
 function apSync() {
     const done = apChecksDone();
@@ -13659,7 +13786,8 @@ function apSync() {
     const els = discoveredSymbols();
     const realFound = ELEMENTS.filter(e => els.has(e[0])).length;
     const jokeFound = JOKES.filter(j => jokesFound().has(j[0])).length;
-    if (realFound >= apOpt('elements_required') && jokeFound >= apOpt('jokes_required')) {
+    const achDone = ACHIEVEMENTS.filter(a => unlockedAchievements.includes(a.formula)).length;
+    if (realFound >= apOpt('elements_required') && jokeFound >= apOpt('jokes_required') && achDone >= apOpt('achievements_required')) {
         if (apStatus === 'connected') {
             apSend({ cmd: 'StatusUpdate', status: 30 });
         }
@@ -13705,12 +13833,19 @@ function apRenderGoal() {
     const els = discoveredSymbols();
     const realFound = ELEMENTS.filter(e => els.has(e[0])).length;
     const jokeFound = JOKES.filter(j => jokesFound().has(j[0])).length;
+    const achDone = ACHIEVEMENTS.filter(a => unlockedAchievements.includes(a.formula)).length;
     const rows = [['Elements', realFound + ' / ' + apOpt('elements_required') + ' needed']];
     if (apOpt('jokes_required')) {
         rows.push(['Joke elements', jokeFound + ' / ' + apOpt('jokes_required') + ' needed']);
     }
+    if (apOpt('achievements_required')) {
+        rows.push(['Achievements', achDone + ' / ' + apOpt('achievements_required') + ' needed']);
+    }
     rows.push(['Checks done', apState.checked.length.toLocaleString('en-US')]);
-    rows.push(['Progressive Luck', apCount('Progressive Luck') + ' of ' + apOpt('luck_items') + ' (+' + apLuck() + '% luck)']);
+    rows.push(['Luck', '+' + apBoostLuck() + '% from luck boosts' + (apTrapOn('luck') ? ' (halved by a trap)' : '')]);
+    if (apOpt('bonds_tree')) {
+        rows.push(['Bond requirements', apBondGrants().size.toLocaleString('en-US') + ' received']);
+    }
     if (apOpt('joke_elements')) {
         rows.push(['Joke Table', apHasJokes() ? 'Received' : 'Not yet']);
     }
@@ -13762,6 +13897,7 @@ $('apHint').onclick = () => {
     }
 };
 function apInit() {
+    apTrapTick();
     apApplyOptions();
     apSetStatus('offline');
     // a save from a seed: reconnect straight away. No save yet: start on the connect screen
@@ -13959,9 +14095,9 @@ const TUT = [
     { at: '[data-tab="completionist"]', say: 'Your best finds are ranked here. Tap All elements for the periodic table.', done: () => $('completionView').style.display !== 'none' },
     { at: '#periodic [data-sym="O"]', say: 'Elements light up once you\'ve found them. Tap oxygen.', done: () => onScreen('element') },
     { at: '#elementBuffPanel', say: 'Every element has a bonus, and it\'s yours for good from the first time you find it.' },
-    { on: 'bonds', way: 'Next up, your bonds tree.', say: 'This is your bonds tree. Each slot asks for something you\'ve rolled, and filling it lights up the line to it for a bonus. Tap the glowing slot in the middle to put your oxygen in.', done: () => netFilled(0) },
+    { on: 'bonds', way: 'Next up, your bonds tree.', say: 'This is your bonds tree. Each slot asks for something you\'ve rolled, or its requirements can arrive from the multiworld. Taking a slot sends a check. Tap the glowing slot in the middle to put your oxygen in.', done: () => netFilled(0) },
     { on: 'bonds', say: 'The slots next to it want helium and nitrogen. Fill them both.', done: () => tutAround() >= 2 },
-    { on: 'bonds', say: 'Those rolls are used up now, but the bonuses stay. The tree goes a long way out.' },
+    { on: 'bonds', say: 'Those rolls are used up now. The tree goes a long way out.' },
     { on: 'shop', way: 'Next, the shop.', at: '#shopTimer', say: 'The shop. Catalysts boost your luck, your speed and plenty more for a while. They cost quarks, which every roll earns, and the stock changes on a timer.' },
     { on: 'catinv', way: 'Now your inventory.', say: 'Catalysts you buy wait in your inventory until you use them. Yours is empty for now.' },
     { on: 'ap', way: 'Now the Archipelago page.', at: '#apGoal', say: 'This is your link to the multiworld: how close you are to your goal, what you\'ve been sent, and messages from everyone else. Every element you find for the first time is a check.' },
@@ -14022,7 +14158,7 @@ function tutShow(i) {
     try {
         localStorage.setItem('elementalTutorial', i);
     } catch (e) { }
-    const found = s.roll && discoveredSymbols().has(s.roll);
+    const found = s.roll && rolledSymbols().has(s.roll);
     tutScript = s.roll && !found ? s.roll : null;
     if (!tutBox) {
         tutBox = document.createElement('div');
@@ -14049,7 +14185,7 @@ function tutTick() {
     if (tutOff(s)) {
         return tutShow(tutAt + 1);
     }
-    if (s.roll ? discoveredSymbols().has(s.roll) && !rolling : s.done && s.done()) {
+    if (s.roll ? rolledSymbols().has(s.roll) && !rolling : s.done && s.done()) {
         return tutShow(tutAt + 1);
     }
     // not there yet: point at the next button on the way
