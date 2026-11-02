@@ -12,7 +12,9 @@ Every roll pulls elements from the periodic table, with a chance to chain into c
 1. Download `archelemental.apworld` from the game's Archipelago page (it always matches the live game), then
    double-click it or put it in your Archipelago `custom_worlds` folder.
 2. Make your options file: in the Archipelago Launcher choose "Generate Template Options", or start from
-   [`examples/Archelemental.yaml`](examples/Archelemental.yaml).
+   [`examples/Archelemental.yaml`](examples/Archelemental.yaml). There are also nine presets in
+   [`downloads/presets`](downloads/presets) (Normal, Ion Frenzy and Element Frenzy, at about 1, 2 and 4 hours for one
+   player with autoroll on), and the game's Archipelago page has buttons for them.
 3. Once the multiworld is generated and hosted, open the game, go to **Archipelago** and connect with the server
    address, your slot name and the password if there is one.
 
@@ -63,6 +65,7 @@ Both can be on, or neither.
 | `bonds_tree`, `bond_slots` | The bonds tree, and how many of its slots are checks | off, 800 |
 | `shop`, `events` | Keep those parts of the game | on |
 | `restock_minutes` | Shop restock time before Reset Speed items | 18 |
+| `place_autoroll_early` | Autoroll Unlock goes on one of the five commonest elements in your own game | on |
 | `luck_boosts_15/30/60/90`, `minimum_luck_boosts` | How many of each luck boost, and the fewest in total | 5 each, 8 |
 | `roll_budget` | Rolls the logic will have you spend hunting one thing | 5000 |
 | `catalyst_copies`, `bundles_100` ... `bundles_100000` | The filler | 50, 200/100/50/10 |

@@ -91,6 +91,12 @@ class Shop(DefaultOnToggle):
     display_name = "Shop"
 
 
+class PlaceAutorollEarly(DefaultOnToggle):
+    """Puts Autoroll Unlock on one of the five most common elements in your own game, so it turns up in your first
+    few minutes of rolling instead of somewhere deep in the multiworld."""
+    display_name = "Place Autoroll Early"
+
+
 class Events(DefaultOnToggle):
     """Keeps events like Quark Storms. They never count as checks, they just help you find things."""
     display_name = "Events"
@@ -232,6 +238,7 @@ class ArchelementalOptions(PerGameCommonOptions):
     bond_slots: BondSlots
     shop: Shop
     events: Events
+    place_autoroll_early: PlaceAutorollEarly
     restock_minutes: RestockMinutes
     luck_boosts_15: LuckBoost15
     luck_boosts_30: LuckBoost30
@@ -253,7 +260,7 @@ option_groups = [
     OptionGroup("Goal", [ElementsRequired, JokesRequired, AchievementsRequired]),
     OptionGroup("Game modes", [ElementFrenzy, IonizationFrenzy]),
     OptionGroup("Checks", [JokeElements, CatalystChecks, AchievementChecks]),
-    OptionGroup("Game", [BondsTree, BondSlots, Shop, Events, RestockMinutes]),
+    OptionGroup("Game", [BondsTree, BondSlots, Shop, Events, RestockMinutes, PlaceAutorollEarly]),
     OptionGroup("Luck", [LuckBoost15, LuckBoost30, LuckBoost60, LuckBoost90, MinimumLuckBoosts, RollBudget]),
     OptionGroup("Filler", [CatalystCopies, Bundles100, Bundles1000, Bundles10000, Bundles100000]),
     OptionGroup("Traps", [RollSpeedTraps, LuckTraps, QuarkDropTraps]),

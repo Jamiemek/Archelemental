@@ -23,6 +23,8 @@ Archelemental:
   # parts of the game to keep
   shop: true
   events: true
+  # Autoroll Unlock goes on one of the five commonest elements, so you get it in your first few minutes
+  place_autoroll_early: true
   # how often the shop restocks, in minutes, before Progressive Shop Reset Speed
   restock_minutes: 18
   # luck only comes from these boosts (0 to 5 of each), with a minimum for the total

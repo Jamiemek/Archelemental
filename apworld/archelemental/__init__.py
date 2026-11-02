@@ -240,6 +240,13 @@ class ArchelementalWorld(World):
     def create_items(self) -> None:
         spaces = len(self.location_names)
         pool = list(self.required)
+        if self.options.place_autoroll_early:
+            # on one of the five commonest elements, found in the first minutes of rolling
+            common = sorted(ELEMENTS, key=lambda e: e["odds"])[:5]
+            spot = self.multiworld.get_location(element_location(self.random.choice(common)), self.player)
+            spot.place_locked_item(self.create_item("Autoroll Unlock"))
+            pool.remove("Autoroll Unlock")
+            spaces -= 1
         # more items than checks: hand the least important ones over at the start
         given = []
         for name in GIVEN_FIRST:

@@ -1235,6 +1235,9 @@ a.link-btn:hover {
   font-weight: 600;
   margin-bottom: 6px;
 }
+.btn-row + .adm-label {
+  margin-top: 14px;
+}
 .adm-input {
   width: 100%;
   max-width: 420px;
