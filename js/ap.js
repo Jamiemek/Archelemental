@@ -2,7 +2,8 @@
 const AP_GAME = 'Archelemental';
 const AP_VERSION = { major: 0, minor: 6, build: 7, class: 'Version' };
 // location ids, matching the APWorld
-const AP_LOC = { element: 1000, joke: 2000, catalyst: 3000, achievement: 4000 };
+const AP_LOC = { element: 1000, joke: 2000, catalyst: 3000, achievement: 4000, ion: 6000, bond: 20000 };
+const AP_ION_TIERS = ['+1', '+2', '+3', '-1', '-2', '-3'];
 const AP_CAT_ITEM = 100;
 const AP_SECRET = 6;
 // the connection
@@ -188,6 +189,10 @@ function apConnected(p) {
     buffCache = weightCache = null;
     apSetStatus('connected');
     apSay('Connected as ' + apConn.name + '.', 'sys');
+    // the seed was made from a tree of a certain size: a different one would send the wrong slots
+    if (apOpt('bonds_tree') && apOpt('bond_nodes') && apOpt('bond_nodes') !== net().nodes.length) {
+        apSay('This seed was made for a different version of the bonds tree (' + apOpt('bond_nodes') + ' slots, this game has ' + net().nodes.length + '). Download the matching APWorld from the game, or play on the version the seed was made for.', 'sys');
+    }
     apApplyOptions();
     apSync();
 }
@@ -210,31 +215,71 @@ function apReceived(index, items) {
     apSaveState();
     buffCache = weightCache = null;
     netCache = bondCache = null;
+    netVer++;
     if (fresh.length) {
         apToast(fresh);
         refreshAfterItems();
     }
 }
 function apItemName(it) {
-    return AP_ITEM[it.item] || (CATALYSTS[it.item - AP_CAT_ITEM] || {}).name || 'Something';
+    const id = it.item;
+    if (AP_ITEM[id]) {
+        return AP_ITEM[id];
+    }
+    if (id >= AP_COS_BASE && id < AP_COS_BASE + AP_COS.length) {
+        return COS[AP_COS[id - AP_COS_BASE]].name;
+    }
+    if (id > AP_ELEMENT_BASE && id <= AP_ELEMENT_BASE + 118) {
+        return 'Element: ' + ELEMENTS[id - AP_ELEMENT_BASE - 1][1];
+    }
+    if (id >= AP_BOND_ITEM && id < AP_BOND_END) {
+        return 'Bond ' + (id - AP_BOND_ITEM + 1) + ' Requirements';
+    }
+    return (CATALYSTS[id - AP_CAT_ITEM] || {}).name || 'Something';
 }
 function apUse(it) {
-    const name = AP_ITEM[it.item];
-    if (name === 'Quark Bundle') {
-        // worth more the further along you are: a few common catalysts at the start, a legendary near the end
-        addQuarks(Math.round(300 * Math.pow(1 + apLuck() / 100, 1.5)));
+    const id = it.item;
+    if (AP_BUNDLE[id]) {
+        addQuarks(AP_BUNDLE[id]);
         return;
     }
-    const c = CATALYSTS[it.item - AP_CAT_ITEM];
-    if (!name && c) {
+    if (AP_TRAP[id]) {
+        apState.traps.push({ k: AP_TRAP[id], until: Date.now() + AP_TRAP_MS });
+        apTrapTick();
+        return;
+    }
+    const c = id >= AP_CAT_ITEM && id < 200 ? CATALYSTS[id - AP_CAT_ITEM] : null;
+    if (c) {
         catInv[c.id] = (catInv[c.id] || 0) + 1;
         saveCats();
     }
 }
+// traps wear off by themselves: when one ends, everything that depended on it is worked out again
+let apTrapTimer = null;
+function apTrapTick() {
+    clearTimeout(apTrapTimer);
+    const now = Date.now();
+    apState.traps = apState.traps.filter(t => t.until > now);
+    buffCache = weightCache = null;
+    apSaveState();
+    if (typeof renderRollStats === 'function' && $('homeMap')) {
+        renderRollStats();
+    }
+    if (apState.traps.length) {
+        apTrapTimer = setTimeout(apTrapTick, Math.max(500, Math.min(...apState.traps.map(t => t.until)) - now + 50));
+    }
+}
 function refreshAfterItems() {
+    refreshViews();
     renderRollStats();
+    renderHome();
     renderCatInv();
     renderShop();
+    applyCosmetics();
+    if ($('bonds').classList.contains('active')) {
+        $('netTotals').innerHTML = netTotalsHtml();
+        netDrawSoon();
+    }
     if (jokesOn()) {
         jokeIntroCheck();
     }
@@ -272,7 +317,8 @@ function apText(parts) {
 // checks: worked out from the save itself, so nothing is lost if the game was played offline
 function apChecksDone() {
     const out = [];
-    const found = discoveredSymbols();
+    // what you rolled, not what you were sent: with Element Frenzy those differ
+    const found = rolledSymbols();
     ELEMENTS.forEach((e, i) => {
         if (found.has(e[0])) {
             out.push(AP_LOC.element + i + 1);
@@ -299,7 +345,32 @@ function apChecksDone() {
             }
         });
     }
+    if (apOpt('ionization_frenzy')) {
+        ELEMENTS.forEach((e, i) => {
+            (apState.ions[e[0]] || []).forEach(code => {
+                const t = AP_ION_TIERS.indexOf(code);
+                if (t >= 0) {
+                    out.push(AP_LOC.ion + i * AP_ION_TIERS.length + t + 1);
+                }
+            });
+        });
+    }
+    if (apOpt('bonds_tree')) {
+        Object.keys(netState).forEach(id => {
+            if (netState[id]) {
+                out.push(AP_LOC.bond + (+id));
+            }
+        });
+    }
     return out;
+}
+function apIon(sym, ion) {
+    const code = (ion > 0 ? '+' : '-') + Math.abs(ion);
+    const list = apState.ions[sym] || (apState.ions[sym] = []);
+    if (!list.includes(code)) {
+        list.push(code);
+        apSaveState();
+    }
 }
 function apSync() {
     const done = apChecksDone();
@@ -313,7 +384,8 @@ function apSync() {
     const els = discoveredSymbols();
     const realFound = ELEMENTS.filter(e => els.has(e[0])).length;
     const jokeFound = JOKES.filter(j => jokesFound().has(j[0])).length;
-    if (realFound >= apOpt('elements_required') && jokeFound >= apOpt('jokes_required')) {
+    const achDone = ACHIEVEMENTS.filter(a => unlockedAchievements.includes(a.formula)).length;
+    if (realFound >= apOpt('elements_required') && jokeFound >= apOpt('jokes_required') && achDone >= apOpt('achievements_required')) {
         if (apStatus === 'connected') {
             apSend({ cmd: 'StatusUpdate', status: 30 });
         }
@@ -359,12 +431,19 @@ function apRenderGoal() {
     const els = discoveredSymbols();
     const realFound = ELEMENTS.filter(e => els.has(e[0])).length;
     const jokeFound = JOKES.filter(j => jokesFound().has(j[0])).length;
+    const achDone = ACHIEVEMENTS.filter(a => unlockedAchievements.includes(a.formula)).length;
     const rows = [['Elements', realFound + ' / ' + apOpt('elements_required') + ' needed']];
     if (apOpt('jokes_required')) {
         rows.push(['Joke elements', jokeFound + ' / ' + apOpt('jokes_required') + ' needed']);
     }
+    if (apOpt('achievements_required')) {
+        rows.push(['Achievements', achDone + ' / ' + apOpt('achievements_required') + ' needed']);
+    }
     rows.push(['Checks done', apState.checked.length.toLocaleString('en-US')]);
-    rows.push(['Progressive Luck', apCount('Progressive Luck') + ' of ' + apOpt('luck_items') + ' (+' + apLuck() + '% luck)']);
+    rows.push(['Luck', '+' + apBoostLuck() + '% from luck boosts' + (apTrapOn('luck') ? ' (halved by a trap)' : '')]);
+    if (apOpt('bonds_tree')) {
+        rows.push(['Bond requirements', apBondGrants().size.toLocaleString('en-US') + ' received']);
+    }
     if (apOpt('joke_elements')) {
         rows.push(['Joke Table', apHasJokes() ? 'Received' : 'Not yet']);
     }
@@ -416,6 +495,7 @@ $('apHint').onclick = () => {
     }
 };
 function apInit() {
+    apTrapTick();
     apApplyOptions();
     apSetStatus('offline');
     // a save from a seed: reconnect straight away. No save yet: start on the connect screen

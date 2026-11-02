@@ -9,9 +9,9 @@ const TUT = [
     { at: '[data-tab="completionist"]', say: 'Your best finds are ranked here. Tap All elements for the periodic table.', done: () => $('completionView').style.display !== 'none' },
     { at: '#periodic [data-sym="O"]', say: 'Elements light up once you\'ve found them. Tap oxygen.', done: () => onScreen('element') },
     { at: '#elementBuffPanel', say: 'Every element has a bonus, and it\'s yours for good from the first time you find it.' },
-    { on: 'bonds', way: 'Next up, your bonds tree.', say: 'This is your bonds tree. Each slot asks for something you\'ve rolled, and filling it lights up the line to it for a bonus. Tap the glowing slot in the middle to put your oxygen in.', done: () => netFilled(0) },
+    { on: 'bonds', way: 'Next up, your bonds tree.', say: 'This is your bonds tree. Each slot asks for something you\'ve rolled, or its requirements can arrive from the multiworld. Taking a slot sends a check. Tap the glowing slot in the middle to put your oxygen in.', done: () => netFilled(0) },
     { on: 'bonds', say: 'The slots next to it want helium and nitrogen. Fill them both.', done: () => tutAround() >= 2 },
-    { on: 'bonds', say: 'Those rolls are used up now, but the bonuses stay. The tree goes a long way out.' },
+    { on: 'bonds', say: 'Those rolls are used up now. The tree goes a long way out.' },
     { on: 'shop', way: 'Next, the shop.', at: '#shopTimer', say: 'The shop. Catalysts boost your luck, your speed and plenty more for a while. They cost quarks, which every roll earns, and the stock changes on a timer.' },
     { on: 'catinv', way: 'Now your inventory.', say: 'Catalysts you buy wait in your inventory until you use them. Yours is empty for now.' },
     { on: 'ap', way: 'Now the Archipelago page.', at: '#apGoal', say: 'This is your link to the multiworld: how close you are to your goal, what you\'ve been sent, and messages from everyone else. Every element you find for the first time is a check.' },
@@ -72,7 +72,7 @@ function tutShow(i) {
     try {
         localStorage.setItem('elementalTutorial', i);
     } catch (e) { }
-    const found = s.roll && discoveredSymbols().has(s.roll);
+    const found = s.roll && rolledSymbols().has(s.roll);
     tutScript = s.roll && !found ? s.roll : null;
     if (!tutBox) {
         tutBox = document.createElement('div');
@@ -99,7 +99,7 @@ function tutTick() {
     if (tutOff(s)) {
         return tutShow(tutAt + 1);
     }
-    if (s.roll ? discoveredSymbols().has(s.roll) && !rolling : s.done && s.done()) {
+    if (s.roll ? rolledSymbols().has(s.roll) && !rolling : s.done && s.done()) {
         return tutShow(tutAt + 1);
     }
     // not there yet: point at the next button on the way

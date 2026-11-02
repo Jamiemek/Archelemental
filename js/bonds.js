@@ -377,17 +377,9 @@ function shownNet() {
 }
 const NET_BIG = new Set(['mult', 'slot', 'chain', 'ion', 'hold', 'cos', 'drop']);
 const edgeLit = e => netFilled(e.a) && netFilled(e.b);
+// the lines used to be buffs; with Archipelago every slot is a check and the buffs come from items instead
 function edgeDesc(e) {
-    const v = e.val;
-    if (e.orbit != null && NET_BIG.has(e.kind) && !edgeLit(e)) {
-        return '???';
-    }
-    const outer = {
-        quark: `+${v}% quarks`, event: `+${v}% event chance`, cdur: `+${v}% catalyst time`, dup: `+${v}% duplicate catalysts`,
-        refund: `+${v}% catalyst refunds`, storm: `+${v}% Quark Storm size`, hold: 'Shop hold', drop: 'Catalyst drops (1 in 500 presses of Roll)',
-        ion: 'Unlocks ionisation', cos: 'Unlocks ' + COSMETIC_NAMES[v]
-    };
-    return outer[e.kind] || (e.kind === 'luck' ? `+${v}% luck` : e.kind === 'mult' ? `×${v} luck` : e.kind === 'auto' ? `+${v}% autoroll speed` : e.kind === 'chain' ? 'Chain chance +1 step' : e.kind === 'extra' ? '+1 bonus roll' : e.kind === 'price' ? `−${v}% shop prices` : e.kind === 'refresh' ? `−${v} min shop restock` : e.kind === 'stock' ? `+${v}% rarer shop stock` : '+1 shop stock slot');
+    return '';
 }
 function reqShort(q) {
     if (q.t === 'el') {
@@ -471,7 +463,8 @@ const netReachable = id => id === 0 || net().adj[id].some(i => {
     const e = net().edges[i];
     return netFilled(e.a === id ? e.b : e.a);
 });
-const netFillable = id => !netFilled(id) && netReachable(id) && canPay(net().nodes[id].req);
+const netGranted = id => apBondGrants().has(id);
+const netFillable = id => !netFilled(id) && netReachable(id) && (netGranted(id) || canPay(net().nodes[id].req));
 // every slot you could fill right now, worked out once per change
 let fillMemo = null;
 function fillableIds() {
@@ -487,9 +480,12 @@ function fillSlot(id) {
     if (!netFillable(id)) {
         return false;
     }
-    const plan = payPlan(n.req);
-    plan.forEach(p => p.c.spent = (p.c.spent || 0) + p.take);
-    save();
+    // the item's requirements are used first, so what you rolled stays yours
+    if (!netGranted(id)) {
+        const plan = payPlan(n.req);
+        plan.forEach(p => p.c.spent = (p.c.spent || 0) + p.take);
+        save();
+    }
     fillFree(id);
     return true;
 }
@@ -497,6 +493,7 @@ function fillFree(id) {
     netState[id] = 1;
     saveNet();
     netVer++;
+    apSync();
     buffCache = weightCache = null;
     setTimeout(jokeIntroCheck, 600);
     applyCosmetics();
@@ -523,8 +520,8 @@ function pityPrice(n) {
     pityMemo.price.set(key, price);
     return price;
 }
-const pityReady = n => n.orbit != null && !netFilled(n.id) && netReachable(n.id) && !canPay(n.req) && pityOn() && quarks >= pityPrice(n);
-const agentReady = n => catInv.bondagent > 0 && !netFilled(n.id) && netReachable(n.id) && !canPay(n.req);
+const pityReady = n => n.orbit != null && !netFilled(n.id) && netReachable(n.id) && !netGranted(n.id) && !canPay(n.req) && pityOn() && quarks >= pityPrice(n);
+const agentReady = n => catInv.bondagent > 0 && !netFilled(n.id) && netReachable(n.id) && !netGranted(n.id) && !canPay(n.req);
 function useAgent(n) {
     catInv.bondagent--;
     if (!catInv.bondagent) {
@@ -572,34 +569,16 @@ function netBonus() {
     if (netCache && netCache.v === netVer) {
         return netCache.r;
     }
+    const n = name => apCount(name);
+    const shopLuck = n('Progressive Shop Luck');
     const r = {
-        add: 0, mult: 1, auto: 0, price: 0, refresh: 0, stock: 0, slots: 0, chain: 0, extra: 0,
-        quark: 0, event: 0, cdur: 0, dup: 0, refund: 0, storm: 0, hold: false, ion: false, cos: [],
-        away: 0, evlen: 0, alone: 0, secret: 0, jokerate: 0, drop: 0
+        add: 0, mult: 1, auto: n('Progressive Autoroll Speed') * AP_STEP.autoroll, scan: n('Progressive Scanner Speed') * AP_STEP.scanner,
+        price: shopLuck * AP_STEP.shopLuckPrice, refresh: n('Progressive Shop Reset Speed') * AP_STEP.reset, stock: shopLuck * AP_STEP.shopLuckStock,
+        slots: n('Progressive Shop Slot') * AP_STEP.slot, chain: 0, extra: n('Progressive Bonus Roll'),
+        quark: n('Progressive Quark Gain') * AP_STEP.quark, event: apOpt('events') ? n('Progressive Event Spawn Chance') * AP_STEP.event : 0,
+        cdur: 0, dup: 0, refund: 0, storm: 0, hold: n('Shop Hold Unlock') > 0, ion: n('Ionization Unlock') > 0, cos: apCosItems(),
+        away: 0, evlen: 0, alone: 0, secret: 0, jokerate: 0, drop: n('Catalyst Rolling Unlock') > 0 ? 0.2 : 0
     };
-    // with the bonds tree switched off in the YAML, it gives nothing
-    (apOpt('bonds_tree') ? net().edges : []).forEach(e => {
-        if (!edgeLit(e)) {
-            return;
-        }
-        if (e.kind === 'luck') {
-            r.add += e.val;
-        } else if (e.kind === 'mult') {
-            r.mult *= e.val;
-        } else if (e.kind === 'slot') {
-            r.slots += 1;
-        } else if (e.kind === 'cos') {
-            r.cos.push(e.val);
-        } else if (typeof r[e.kind] === 'boolean') {
-            r[e.kind] = true;
-        } else {
-            r[e.kind] += e.val;
-        }
-    });
-    // the oscilloscope comes with the first slot filled on outer ring 1
-    if (apOpt('bonds_tree') && net().nodes.some(n => n.orbit === 0 && netFilled(n.id))) {
-        r.cos.push('oscilloscope');
-    }
     netCache = { v: netVer, r };
     return r;
 }
@@ -613,9 +592,7 @@ function bondBonus() {
     const r = Object.assign({}, n, { cos: n.cos.slice() });
     found.forEach(s => {
         const [k, v] = JOKE_BONUS[s];
-        if (k === 'cos') {
-            r.cos.push(v);
-        } else {
+        if (k !== 'cos') {
             r[k] += v;
         }
     });
@@ -779,6 +756,9 @@ function netDraw() {
         g.textBaseline = 'middle';
         labels.forEach(([mx, my, e, on]) => {
             const txt = edgeDesc(e);
+            if (!txt) {
+                return;
+            }
             const w = g.measureText(txt).width + 10;
             g.fillStyle = 'rgba(10,16,14,.85)';
             g.fillRect(mx - w / 2, my - 9 * k, w, 18 * k);
@@ -802,7 +782,7 @@ function netDraw() {
                 return;
             }
             const filled = netFilled(n.id);
-            const avail = !filled && netReachable(n.id) && canPay(n.req);
+            const avail = !filled && netReachable(n.id) && (netGranted(n.id) || canPay(n.req));
             anyAvail = anyAvail || avail;
             const key = filled ? ringCol(n.ring) : 'rgba(232,239,233,.35)';
             if (!groups.has(key)) {
@@ -836,7 +816,7 @@ function netDraw() {
             }
             const filled = netFilled(n.id);
             const reach = netReachable(n.id);
-            const avail = !filled && reach && canPay(n.req);
+            const avail = !filled && reach && (netGranted(n.id) || canPay(n.req));
             const pity = !avail && (agentReady(n) || pityReady(n));
             const col = ringCol(n.ring);
             anyAvail = anyAvail || avail || pity;
@@ -1046,25 +1026,16 @@ function netJump() {
     }
 }
 function netTotalsHtml() {
-    const b = netBonus();
-    const rows = [['Luck', '+' + b.add.toFixed(2) + '%'], ['Luck multiplier', '×' + b.mult.toFixed(3)], ['Autoroll speed', '+' + b.auto.toFixed(1) + '%'], ['Shop prices', '−' + b.price.toFixed(2) + '%'], ['Shop restock', '−' + b.refresh.toFixed(2) + ' min'], ['Rarer shop stock', '+' + b.stock.toFixed(2) + '%'], ['Shop stock slots', '+' + b.slots], ['Bonus rolls', '+' + b.extra], ['Chain steps', '+' + b.chain]];
-    [['Quarks per roll', b.quark, '%'], ['Event chance', b.event, '%'], ['Catalyst duration', b.cdur, '%'], ['Duplicate catalysts', b.dup, '% chance'],
-        ['Single-roll catalysts kept', b.refund, '% chance'], ['Bigger Quark Storms', b.storm, '%']].forEach(([k, v, u]) => {
-        if (v) {
-            rows.push([k, '+' + v.toFixed(2) + u]);
+    const total = net().nodes.length;
+    const taken = Object.keys(netState).length;
+    const grants = apBondGrants();
+    let waiting = 0;
+    grants.forEach(id => {
+        if (!netFilled(id)) {
+            waiting++;
         }
     });
-    [['Shop hold', b.hold], ['Ionisation', b.ion], ['Joke periodic table', jokesOn()]].forEach(([k, on]) => {
-        if (on) {
-            rows.push([k, 'Unlocked']);
-        }
-    });
-    if (b.cos.length) {
-        rows.push(['Cosmetics unlocked', b.cos.length]);
-    }
-    if (b.drop) {
-        rows.push(['Catalyst drops', '1 in ' + Math.round(100 / b.drop) + ' presses']);
-    }
+    const rows = [['Slots taken', taken.toLocaleString('en-US') + ' / ' + total.toLocaleString('en-US')], ['Requirements received', grants.size.toLocaleString('en-US')], ['Received, not taken yet', waiting.toLocaleString('en-US')]];
     return rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 }
 // tapping a slot fills it straight away when you can; otherwise the slot flashes red

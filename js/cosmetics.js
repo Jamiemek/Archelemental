@@ -21,7 +21,7 @@ function cosSave() {
     } catch (e) { }
 }
 const cosUnlocked = id => bondBonus().cos.includes(id);
-const cosOwned = id => cosUnlocked(id) && (!!COS[id].free || cosState.owned.includes(id));
+const cosOwned = id => cosUnlocked(id);
 const hasFinalBadge = () => cosUnlocked('gameover');
 const effectSkin = () => cosState.effects && cosOwned(cosState.effects) ? cosState.effects : '';
 const scannerSkin = () => cosState.scanner && cosOwned(cosState.scanner) ? cosState.scanner : '';

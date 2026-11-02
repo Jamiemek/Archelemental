@@ -350,7 +350,8 @@ function buildBuffs() {
 const ELEMENT_BUFFS = buildBuffs();
 // jokes don't count. only rebuilt when a new formula turns up
 let foundCache = null;
-function discoveredSymbols() {
+// what has been rolled, whatever Archipelago has handed over: this is what the checks are
+function rolledSymbols() {
     if (foundCache && foundCache.col === collection && foundCache.n === collection.length) {
         return foundCache.set;
     }
@@ -359,6 +360,10 @@ function discoveredSymbols() {
     JOKE_SYMS.forEach(s => set.delete(s));
     foundCache = { col: collection, n: collection.length, set };
     return set;
+}
+// what shows as found. With Element Frenzy that is only what the multiworld has sent, not what you rolled
+function discoveredSymbols() {
+    return apOpt('element_frenzy') ? apElementItems() : rolledSymbols();
 }
 let jokeFoundCache = null;
 function jokesFound() {

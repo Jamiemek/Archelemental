@@ -52,9 +52,9 @@ function computeBuffs() {
     const bd = bondBonus();
     const cb = catBonus();
     // each Chain Boost from the multiworld is one step better, like a Chain Primer that never runs out
-    const denom = Math.max(CHAIN_MAX, BASE_CHAIN - (BASE_CHAIN - CHAIN_MAX) / 8 * Math.min(8, chainSteps + bd.chain)) - apCount('Chain Boost');
+    const denom = Math.max(CHAIN_MAX, BASE_CHAIN - (BASE_CHAIN - CHAIN_MAX) / 8 * Math.min(8, chainSteps + bd.chain)) - apCount('Progressive Chain Boost');
     return {
-        found, luck: (luck + bd.add + apLuck()) * bd.mult + cb.luck, speed: speed + cb.speed, autoUnlocked: autoUnlock || apCount('Autoroll') > 0, autoSpeed: autoSpeed + bd.auto, autoGap: Math.max(AUTO_MIN_GAP, AUTO_BASE_GAP / (1 + (autoSpeed + bd.auto) / 100)), extra: Math.min(3, extra + bd.extra + cb.extra + apCount('Extra Roll')), chainSteps: Math.min(8, chainSteps), chainDenom: cb.chainMax ? CHAIN_MAX : Math.max(CHAIN_MAX, denom - cb.chain), fam: cb.fam, quark: cb.quark + bd.quark,
+        found, luck: (luck + apBoostLuck()) * (apTrapOn('luck') ? 0.5 : 1) + cb.luck, speed: apTrapOn('speed') ? ((1 + (speed + cb.speed + bd.scan) / 100) * 0.5 - 1) * 100 : speed + cb.speed + bd.scan, autoUnlocked: apCount('Autoroll Unlock') > 0, autoSpeed: autoSpeed + bd.auto, autoGap: Math.max(AUTO_MIN_GAP, AUTO_BASE_GAP / (1 + (autoSpeed + bd.auto) / 100)), extra: Math.min(3, extra + bd.extra + cb.extra), chainSteps: Math.min(8, chainSteps), chainDenom: cb.chainMax ? CHAIN_MAX : Math.max(CHAIN_MAX, denom - cb.chain), fam: cb.fam, quark: cb.quark + bd.quark,
         // reagent/punchline add, running gag multiplies
         jokeMult: (1 + cb.joke / 100) * (cb.gag || 1), level: cb.level, exp: catNextExpiry()
     };
@@ -152,7 +152,7 @@ function quarkMult(elements, buffs) {
     const cb = catBonus();
     const n = elements.length;
     const pct = (buffs.quark || 0) + (n === 1 ? bondBonus().alone : 0) + (n > 1 ? cb.lens : 0) + cb.heavy * (n - 1);
-    return (1 + pct / 100) * (cb.laugh && elements.some(e => isJoke(e[0])) ? 3 : 1);
+    return (1 + pct / 100) * (cb.laugh && elements.some(e => isJoke(e[0])) ? 3 : 1) * (apTrapOn('quark') ? 0.5 : 1);
 }
 // + Redactium
 const secretChance = () => SECRET_CHANCE + bondBonus().secret / 100;
@@ -190,16 +190,20 @@ function exactRarity(elements, guaranteedExtras = 0) {
 const ION_PLUS = 0.01;
 const ION_MINUS = 0.001;
 const ION_MAX = 3;
+const ionPlusChance = () => ION_PLUS + apCount('Progressive + Ion Chance') * AP_STEP.ionPlus;
+const ionMinusChance = () => ION_MINUS + apCount('Progressive - Ion Chance') * AP_STEP.ionMinus;
 function rollIon() {
     if (!bondBonus().ion) {
         return 0;
     }
-    const plus = rnd() < ION_PLUS;
-    const minus = rnd() < ION_MINUS;
+    const plusP = ionPlusChance();
+    const minusP = ionMinusChance();
+    const plus = rnd() < plusP;
+    const minus = rnd() < minusP;
     if (!plus && !minus) {
         return 0;
     }
-    const p = minus ? ION_MINUS : ION_PLUS;
+    const p = minus ? minusP : plusP;
     let n = 1;
     while (n < ION_MAX && rnd() < p) {
         n++;
@@ -239,6 +243,7 @@ function ionCredit(sym, ion) {
     if (!ion) {
         return;
     }
+    apIon(sym, ion);
     const m = ionMarks[sym] || [0, 0];
     const k = ion > 0 ? 0 : 1;
     if (Math.abs(ion) > m[k]) {

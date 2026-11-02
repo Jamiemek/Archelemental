@@ -403,12 +403,12 @@ function clearCatalyst(tier) {
     buffCache = weightCache = null;
 }
 // the shop
-// the YAML sets the restock time; bonds can still shave minutes off it
+// the YAML sets the restock time; Progressive Shop Reset Speed shaves minutes off it
 function shopPeriodMs() {
     return Math.max(2, apOpt('restock_minutes') - bondBonus().refresh) * 60000;
 }
-// 2 + bonds + Shop Slots from the multiworld, max 6
-const shopSlots = () => Math.min(6, 2 + bondBonus().slots + apCount('Shop Slot'));
+// 2 + Progressive Shop Slots from the multiworld, max 7
+const shopSlots = () => Math.min(7, 2 + bondBonus().slots);
 function shopPrice(c, grant = true) {
     return Math.max(1, Math.round(c.price * (1 - Math.min(90, bondBonus().price) / 100) * (grant && catFlags.grant ? 0.5 : 1)));
 }

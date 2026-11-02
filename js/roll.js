@@ -88,7 +88,7 @@ async function doRoll(preset, opts) {
                 let luckUp = ch.rollLuck;
                 let first = null;
                 if (ch.unfound) {
-                    const found = discoveredSymbols();
+                    const found = rolledSymbols();
                     if (ELEMENTS.some(e => !found.has(e[0]))) {
                         first = weightedElement(luckUp, e => !found.has(e[0]));
                     } else {
