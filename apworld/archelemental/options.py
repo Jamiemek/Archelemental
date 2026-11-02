@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from Options import Choice, DefaultOnToggle, OptionGroup, PerGameCommonOptions, Range, Toggle
 
+from .data import BOND_NODES
+
 
 class ElementsRequired(Range):
     """How many of the 118 real elements you need to have found to finish."""
@@ -68,10 +70,20 @@ class AchievementChecks(Toggle):
     display_name = "Achievement Checks"
 
 
-class BondsTree(DefaultOnToggle):
-    """Keeps the bonds tree. Every slot is a check, and each slot's requirements arrive as an item.
-    This is most of the multiworld (over 2,600 checks); turn it off for a much shorter game."""
+class BondsTree(Toggle):
+    """Adds the bonds tree. Its slots are checks, and each one's requirements arrive as an item.
+    Bond Slots sets how many of them count."""
     display_name = "Bonds Tree"
+
+
+class BondSlots(Range):
+    """How many bonds tree slots are checks, counting out from the middle. Only used with Bonds Tree on.
+    The rest of the tree can still be filled in, but those slots aren't checks.
+    2,063 to 2,110 count as 2,062: the first slots of the outer ring are only reached from further round it."""
+    display_name = "Bond Slots"
+    range_start = 1
+    range_end = BOND_NODES
+    default = 800
 
 
 class Shop(DefaultOnToggle):
@@ -217,6 +229,7 @@ class ArchelementalOptions(PerGameCommonOptions):
     catalyst_checks: CatalystChecks
     achievement_checks: AchievementChecks
     bonds_tree: BondsTree
+    bond_slots: BondSlots
     shop: Shop
     events: Events
     restock_minutes: RestockMinutes
@@ -240,7 +253,7 @@ option_groups = [
     OptionGroup("Goal", [ElementsRequired, JokesRequired, AchievementsRequired]),
     OptionGroup("Game modes", [ElementFrenzy, IonizationFrenzy]),
     OptionGroup("Checks", [JokeElements, CatalystChecks, AchievementChecks]),
-    OptionGroup("Game", [BondsTree, Shop, Events, RestockMinutes]),
+    OptionGroup("Game", [BondsTree, BondSlots, Shop, Events, RestockMinutes]),
     OptionGroup("Luck", [LuckBoost15, LuckBoost30, LuckBoost60, LuckBoost90, MinimumLuckBoosts, RollBudget]),
     OptionGroup("Filler", [CatalystCopies, Bundles100, Bundles1000, Bundles10000, Bundles100000]),
     OptionGroup("Traps", [RollSpeedTraps, LuckTraps, QuarkDropTraps]),

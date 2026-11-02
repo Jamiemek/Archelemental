@@ -44,7 +44,7 @@ const apSaveId = () => {
 // options default to everything on until a seed says otherwise
 const AP_DEFAULTS = {
     elements_required: 118, jokes_required: 0, achievements_required: 0, element_frenzy: 0, ionization_frenzy: 0, joke_elements: 1,
-    catalyst_checks: 4, achievement_checks: 0, bonds_tree: 1, shop: 1, events: 1, restock_minutes: 18, bond_nodes: 0, ion_levels: 0
+    catalyst_checks: 4, achievement_checks: 0, bonds_tree: 1, bond_slots: 0, shop: 1, events: 1, restock_minutes: 18, bond_nodes: 0, ion_levels: 0
 };
 const apOpt = k => {
     const d = apState.slotData;

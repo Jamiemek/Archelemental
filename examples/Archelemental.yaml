@@ -17,8 +17,10 @@ Archelemental:
   catalyst_checks: epic
   # each of the 100 compound achievements is a check
   achievement_checks: false
-  # parts of the game to keep. The bonds tree is over 2,600 checks
-  bonds_tree: true
+  # the bonds tree, and how many of its slots are checks, counting out from the middle (1 to 2683)
+  bonds_tree: false
+  bond_slots: 800
+  # parts of the game to keep
   shop: true
   events: true
   # how often the shop restocks, in minutes, before Progressive Shop Reset Speed

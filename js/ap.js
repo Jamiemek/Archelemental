@@ -356,13 +356,38 @@ function apChecksDone() {
         });
     }
     if (apOpt('bonds_tree')) {
+        const checks = apBondChecks();
         Object.keys(netState).forEach(id => {
-            if (netState[id]) {
+            if (netState[id] && checks.has(+id)) {
                 out.push(AP_LOC.bond + (+id));
             }
         });
     }
     return out;
+}
+// the slots that are checks: the first bond_slots of them (older seeds: all of them), less any the APWorld left
+// out because they can only be reached through a later slot
+let apBondMemo = null;
+function apBondChecks() {
+    const n = net();
+    const k = apOpt('bond_slots') || n.nodes.length;
+    if (!apBondMemo || apBondMemo.k !== k || apBondMemo.n !== n) {
+        const ids = new Set([0]);
+        const queue = [0];
+        for (let q = 0; q < queue.length; q++) {
+            const at = queue[q];
+            n.adj[at].forEach(i => {
+                const e = n.edges[i];
+                const m = e.a === at ? e.b : e.a;
+                if (m < k && !ids.has(m)) {
+                    ids.add(m);
+                    queue.push(m);
+                }
+            });
+        }
+        apBondMemo = { k, n, ids };
+    }
+    return apBondMemo.ids;
 }
 function apIon(sym, ion) {
     const code = (ion > 0 ? '+' : '-') + Math.abs(ion);

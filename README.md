@@ -22,7 +22,8 @@ itself when you come back, and anything you found while offline is sent as soon 
 ## Checks
 
 - The 118 elements, the first time each is rolled. A compound counts for every element in it.
-- Every slot of the bonds tree (2,683 of them). Slots no longer give buffs: taking one is a check.
+- Slots of the bonds tree (optional, off by default): 800 by default, up to all 2,683, counting out from the middle.
+  Slots no longer give buffs: taking one is a check.
 - One of each catalyst from your own shop or a drop, up to a tier you choose.
 - The 16 joke elements (optional, on by default; they need the Joke Table Unlock).
 - The 100 compound achievements (optional, off by default).
@@ -34,7 +35,7 @@ itself when you come back, and anything you found while offline is sent as soon 
 - **Progressive**: Bonus Roll (3), Shop Luck (8), Shop Reset Speed (8), Shop Slot (5), Autoroll Speed (8), Scanner Speed (8),
   Event Spawn Chance (8), Quark Gain (8), Chain Boost (3).
 - **Unlocks**: Autoroll, Catalyst Rolling, Shop Hold, Joke Table, Ionization.
-- **Bond N Requirements**: one per bonds tree slot. It gives the elements that slot asks for, once, and they're used up
+- **Bond N Requirements**: one per bonds tree slot that's a check. It gives the elements that slot asks for, once, and they're used up
   when you take the slot.
 - **Cosmetics**: every scanner, page and spawn effect skin.
 - **Filler**: up to 50 of each catalyst and four sizes of Quark Bundle (100, 1,000, 10,000, 100,000). Filler is trimmed or
@@ -59,7 +60,8 @@ Both can be on, or neither.
 | `joke_elements` | Joke elements as checks, and the Joke Table Unlock | on |
 | `catalyst_checks` | Highest catalyst tier that counts (`none` to `mythic`) | `epic` |
 | `achievement_checks` | The 100 compound achievements as checks | off |
-| `bonds_tree`, `shop`, `events` | Keep those parts of the game | on |
+| `bonds_tree`, `bond_slots` | The bonds tree, and how many of its slots are checks | off, 800 |
+| `shop`, `events` | Keep those parts of the game | on |
 | `restock_minutes` | Shop restock time before Reset Speed items | 18 |
 | `luck_boosts_15/30/60/90`, `minimum_luck_boosts` | How many of each luck boost, and the fewest in total | 5 each, 8 |
 | `roll_budget` | Rolls the logic will have you spend hunting one thing | 5000 |
@@ -71,7 +73,7 @@ Both can be on, or neither.
 The game weights each element by how rare it is, and luck tilts that toward the rarer ones. For every check the APWorld
 works out how many rolls it would take at each amount of luck, and expects it once the luck boosts you hold get it within
 `roll_budget`. Bonds tree slots follow the tree: you can take a slot once you've taken the one before it and hold its
-Bond N Requirements.
+Bond N Requirements. Slots past `bond_slots` can still be filled in, but they aren't checks.
 
 If there are more items than checks, the least important upgrades and the cosmetics start in your inventory instead.
 

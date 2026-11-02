@@ -1026,8 +1026,8 @@ function netJump() {
     }
 }
 function netTotalsHtml() {
-    const total = net().nodes.length;
-    const taken = Object.keys(netState).length;
+    const checks = apBondChecks();
+    const taken = [...checks].filter(id => netFilled(id)).length;
     const grants = apBondGrants();
     let waiting = 0;
     grants.forEach(id => {
@@ -1035,7 +1035,7 @@ function netTotalsHtml() {
             waiting++;
         }
     });
-    const rows = [['Slots taken', taken.toLocaleString('en-US') + ' / ' + total.toLocaleString('en-US')], ['Requirements received', grants.size.toLocaleString('en-US')], ['Received, not taken yet', waiting.toLocaleString('en-US')]];
+    const rows = [['Check slots taken', taken.toLocaleString('en-US') + ' / ' + checks.size.toLocaleString('en-US')], ['Requirements received', grants.size.toLocaleString('en-US')], ['Received, not taken yet', waiting.toLocaleString('en-US')]];
     return rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 }
 // tapping a slot fills it straight away when you can; otherwise the slot flashes red

@@ -5,9 +5,9 @@ from BaseClasses import Location, LocationProgressType, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 
 from .data import (
-    ACHIEVEMENT_BASE, ACHIEVEMENTS, BOND_BASE, BOND_NODES, BOND_PARENT, BONDS_CATALYSTS, CATALYST_BASE, CATALYSTS,
+    ACHIEVEMENT_BASE, ACHIEVEMENTS, BOND_BASE, BOND_NODES, BONDS_CATALYSTS, CATALYST_BASE, CATALYSTS,
     COSMETICS, ELEMENT_BASE, ELEMENTS, EVENT_CATALYSTS, ION_BASE, ION_TIERS, JOKE_BASE, JOKES, SECRET_TIER,
-    achievement_location, bond_item, bond_location, catalyst_location, element_location, ion_location, joke_location,
+    achievement_location, bond_checks, bond_item, bond_location, catalyst_location, element_location, ion_location, joke_location,
 )
 from .items import (
     BUNDLES, ELEMENT_ITEMS, FILLER_TIER_WEIGHTS, FIXED_ITEMS, ITEM_NAME_TO_ID, ITEMS, LUCK_BOOSTS, TRAPS,
@@ -157,8 +157,8 @@ class ArchelementalWorld(World):
         if o.ionization_frenzy:
             names += [ion_location(e, t) for e in ELEMENTS for t in range(len(ION_TIERS))]
         self.lab_names = names
-        self.bond_count = BOND_NODES if o.bonds_tree else 0
-        self.location_names = names + [bond_location(n) for n in range(self.bond_count)]
+        self.bond_ids, self.bond_parent = bond_checks(o.bond_slots.value) if o.bonds_tree else ([], {})
+        self.location_names = names + [bond_location(n) for n in self.bond_ids]
 
     def create_regions(self) -> None:
         p = self.player
@@ -169,22 +169,22 @@ class ArchelementalWorld(World):
             if name in self.excluded:
                 loc.progress_type = LocationProgressType.EXCLUDED
             lab.locations.append(loc)
-        if not self.bond_count:
+        if not self.bond_ids:
             return
         # the bonds tree: you can take a slot once you've taken the one before it on the way out and hold its requirements
-        regions = []
-        for n in range(self.bond_count):
+        regions = {}
+        for n in self.bond_ids:
             r = Region(bond_location(n), p, self.multiworld)
             r.locations.append(ArchelementalLocation(p, bond_location(n), BOND_BASE + n, r))
             self.multiworld.regions.append(r)
-            regions.append(r)
+            regions[n] = r
 
         def rule_for(item):
             return lambda state: state.has(item, p)
 
         lab.connect(regions[0], "Start of the bonds tree", rule_for(bond_item(0)))
-        for n in range(1, self.bond_count):
-            regions[BOND_PARENT[n]].connect(regions[n], None, rule_for(bond_item(n)))
+        for n in self.bond_ids[1:]:
+            regions[self.bond_parent[n]].connect(regions[n], None, rule_for(bond_item(n)))
 
 
     def create_item(self, name: str) -> ArchelementalItem:
@@ -226,7 +226,7 @@ class ArchelementalWorld(World):
         for name, k in self.boost_counts.items():
             req += [name] * k
         req += [c["name"] for c in COSMETICS]
-        req += [bond_item(n) for n in range(self.bond_count)]
+        req += [bond_item(n) for n in self.bond_ids]
         if o.element_frenzy:
             req += [ELEMENT_ITEMS[e["sym"]] for e in ELEMENTS]
         self.required = req
@@ -318,7 +318,8 @@ class ArchelementalWorld(World):
     def fill_slot_data(self) -> dict[str, Any]:
         data = self.options.as_dict(
             "elements_required", "jokes_required", "achievements_required", "element_frenzy", "ionization_frenzy",
-            "joke_elements", "catalyst_checks", "achievement_checks", "bonds_tree", "shop", "events", "restock_minutes",
+            "joke_elements", "catalyst_checks", "achievement_checks", "bonds_tree", "bond_slots", "shop", "events",
+            "restock_minutes",
         )
         data["bond_nodes"] = BOND_NODES
         data["ion_levels"] = self.ion_levels

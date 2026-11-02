@@ -8,7 +8,7 @@ periodic table, with a chance to chain into compounds. The rarer an element, the
 ## What are the checks?
 
 - Rolling each of the 118 elements for the first time. A compound counts for every element in it.
-- Every slot of the bonds tree (over 2,600 checks).
+- Slots of the bonds tree (optional, off by default): as many as you choose, from 1 to all 2,683, counting out from the middle.
 - Getting one of each catalyst from your own shop or a drop, up to the tier set in your options.
 - Each of the 16 joke elements, if they're on.
 - Each of the 100 compound achievements, if they're on.

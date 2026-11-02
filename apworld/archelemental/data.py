@@ -14,27 +14,25 @@ BOND_NODES = DATA["bonds"]["nodes"]
 BOND_EDGES = DATA["bonds"]["edges"]
 
 
-def _bond_tree():
-    """Each slot's way in from the middle: the shortest path through the tree. The tree has loops, which only ever
-    give more ways in, so logic that follows one path is never too generous."""
-    adj = [[] for _ in range(BOND_NODES)]
-    for a, b in BOND_EDGES:
-        adj[a].append(b)
-        adj[b].append(a)
-    parent = [-1] * BOND_NODES
-    seen = [False] * BOND_NODES
-    seen[0] = True
+BOND_ADJ = [[] for _ in range(BOND_NODES)]
+for _a, _b in BOND_EDGES:
+    BOND_ADJ[_a].append(_b)
+    BOND_ADJ[_b].append(_a)
+
+
+def bond_checks(count):
+    """The slots that are checks when the first `count` count, and each one's way in from the middle: the shortest
+    path that stays inside them. Slot numbers go outwards ring by ring, but a few cut-offs in the first outer ring
+    leave a slot that can only be reached through a later one, so those are left out. The tree has loops, which only
+    ever give more ways in, so logic that follows one path is never too generous."""
+    parent = {0: None}
     queue = [0]
     for n in queue:
-        for m in sorted(adj[n]):
-            if not seen[m]:
-                seen[m] = True
+        for m in sorted(BOND_ADJ[n]):
+            if m < count and m not in parent:
                 parent[m] = n
                 queue.append(m)
-    return parent
-
-
-BOND_PARENT = _bond_tree()
+    return sorted(parent), parent
 
 # the secret tier never counts: those catalysts are too rare to send anyone after
 SECRET_TIER = 6
