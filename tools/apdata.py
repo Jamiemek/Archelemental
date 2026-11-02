@@ -7,6 +7,7 @@ and writes them to apworld/archelemental/data.json, so the APWorld always matche
 import json
 import os
 import re
+import subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -41,11 +42,16 @@ def main():
     ach = [{'name': m.group(2).replace("\\'", "'"), 'formula': m.group(1)}
            for m in re.finditer(r"formula: '([^']+)', name: '((?:[^'\\]|\\.)+)'", block(data, 'ACHIEVEMENTS'))]
     tiers = [m.group(1) for m in re.finditer(r"\{ name: '(\w+)', col:", block(shop, 'CAT_TIERS'))]
-    out = {'elements': els, 'jokes': jokes, 'catalysts': cats, 'achievements': ach, 'tiers': tiers}
+    graph = json.loads(subprocess.run(['node', os.path.join(ROOT, 'tools', 'bondgraph.js')], check=True, capture_output=True, text=True).stdout)
+    bonds_src = read('js/bonds.js')
+    cos = re.search(r"const COSMETIC_NAMES = \{(.*?)\n\};", bonds_src, re.S).group(1)
+    cosmetics = [{'id': m.group(1), 'name': m.group(2)} for m in re.finditer(r"(\w+): '([^']+)'", cos)]
+    out = {'elements': els, 'jokes': jokes, 'catalysts': cats, 'achievements': ach, 'tiers': tiers,
+           'bonds': graph, 'cosmetics': cosmetics}
     with open(os.path.join(ROOT, 'apworld/archelemental/data.json'), 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(out, f, indent=1, ensure_ascii=False)
+        json.dump(out, f, separators=(',', ':'), ensure_ascii=False)
         f.write('\n')
-    print(len(els), 'elements,', len(jokes), 'jokes,', len(cats), 'catalysts,', len(ach), 'achievements')
+    print(len(els), 'elements,', len(jokes), 'jokes,', len(cats), 'catalysts,', len(ach), 'achievements,', graph['nodes'], 'bond slots,', len(cosmetics), 'cosmetics')
 
 if __name__ == '__main__':
     main()
